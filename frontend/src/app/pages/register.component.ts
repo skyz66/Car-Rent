@@ -1,0 +1,118 @@
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+
+@Component({
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  styles: [`
+    .auth-wrap {
+      min-height: calc(100vh - 62px);
+      display: grid; place-items: center;
+      padding: 2rem;
+      background: linear-gradient(160deg, var(--paper) 60%, rgba(23,87,240,0.04) 100%);
+    }
+    .auth-box {
+      width: min(680px, 100%);
+      background: #fff; border-radius: 24px;
+      border: 1px solid rgba(10,14,26,0.08);
+      box-shadow: 0 16px 56px rgba(10,14,26,0.12);
+      padding: 2.5rem;
+    }
+    .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--blue); margin-bottom: 0.6rem; }
+    .title { font-family: var(--font-head); font-size: 1.9rem; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 6px; color: var(--ink); }
+    .subtitle { font-size: 0.875rem; color: var(--ink-3); margin: 0 0 1.75rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .span-2 { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+    .field input {
+      height: 46px; border-radius: 12px;
+      border: 1.5px solid rgba(10,14,26,0.12);
+      padding: 0 14px; font-family: var(--font-body); font-size: 0.9rem;
+      color: var(--ink); background: var(--paper); outline: none;
+      transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+      width: 100%; box-sizing: border-box;
+    }
+    .field input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(23,87,240,0.1); }
+    .section-sep { display: flex; align-items: center; gap: 12px; grid-column: 1/-1; margin: 4px 0; }
+    .section-sep hr { flex: 1; border: none; height: 1px; background: rgba(10,14,26,0.08); }
+    .section-sep span { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3); white-space: nowrap; }
+    .btn-register {
+      width: 100%; height: 50px; border-radius: 12px; border: none;
+      background: var(--blue); color: #fff; font-family: var(--font-head);
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 18px rgba(23,87,240,0.3); transition: all 0.18s; margin-top: 8px;
+    }
+    .btn-register:hover { background: var(--blue-dark); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(23,87,240,0.35); }
+    .link { font-size: 0.875rem; color: var(--blue); font-weight: 500; text-decoration: none; text-align: center; display: block; margin-top: 14px; cursor: pointer; }
+    .link:hover { text-decoration: underline; }
+    .error-box { background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; color: #b91c1c; margin-top: 8px; }
+    @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .span-2, .section-sep { grid-column: 1; } }
+  `],
+  template: `
+    <div class="auth-wrap">
+      <div class="auth-box">
+        <div class="eyebrow">{{ t('eyebrow') }}</div>
+        <h2 class="title">{{ t('title') }}</h2>
+        <p class="subtitle">{{ t('subtitle') }}</p>
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="form-grid">
+            <div class="field"><label>{{ t('firstName') }}</label><input type="text" formControlName="first_name" placeholder="Jean" /></div>
+            <div class="field"><label>{{ t('lastName') }}</label><input type="text" formControlName="last_name" placeholder="Dupont" /></div>
+            <div class="field"><label>{{ t('email') }}</label><input type="email" formControlName="email" placeholder="you@example.com" /></div>
+            <div class="field"><label>{{ t('phone') }}</label><input type="tel" formControlName="phone" placeholder="+216 xx xxx xxx" /></div>
+            <div class="field span-2"><label>{{ t('password') }}</label><input type="password" formControlName="password" [placeholder]="t('passwordPh')" /></div>
+            <div class="section-sep"><hr /><span>{{ t('licenceSection') }}</span><hr /></div>
+            <div class="field span-2"><label>{{ t('licenceNum') }}</label><input type="text" formControlName="licence_number" placeholder="TN-2020-123456" /></div>
+            <div class="field"><label>{{ t('issueDate') }}</label><input type="date" formControlName="licence_issue_date" /></div>
+            <div class="field"><label>{{ t('expiryDate') }}</label><input type="date" formControlName="licence_expiry_date" /></div>
+          </div>
+          <button type="submit" class="btn-register">{{ t('submit') }}</button>
+          <a class="link" routerLink="/login">{{ t('login') }}</a>
+          <div class="error-box" *ngIf="error">{{ error }}</div>
+        </form>
+      </div>
+    </div>
+  `
+})
+export class RegisterComponent {
+  private readonly fb = inject(FormBuilder);
+  error = '';
+  lang: 'en' | 'fr' = 'en';
+  readonly form = this.fb.group({
+    first_name: ['', Validators.required], last_name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]], phone: [''],
+    password: ['', Validators.required], licence_number: ['', Validators.required],
+    licence_issue_date: ['', Validators.required], licence_expiry_date: ['', Validators.required]
+  });
+  private tr: Record<string, Record<string, string>> = {
+    en: {
+      eyebrow: 'Get Started', title: 'Create your account', subtitle: 'Register once and start renting in minutes.',
+      firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone',
+      password: 'Password', passwordPh: 'Create a strong password',
+      licenceSection: "Driver's Licence", licenceNum: 'Licence number',
+      issueDate: 'Issue date', expiryDate: 'Expiry date',
+      submit: 'Create Account →', login: 'Already have an account? Sign in',
+    },
+    fr: {
+      eyebrow: 'Commencer', title: 'Créer votre compte', subtitle: 'Inscrivez-vous une fois et commencez à louer en quelques minutes.',
+      firstName: 'Prénom', lastName: 'Nom', email: 'Adresse e-mail', phone: 'Téléphone',
+      password: 'Mot de passe', passwordPh: 'Créez un mot de passe fort',
+      licenceSection: 'Permis de conduire', licenceNum: 'Numéro de permis',
+      issueDate: "Date d'émission", expiryDate: "Date d'expiration",
+      submit: 'Créer mon compte →', login: 'Déjà un compte ? Se connecter',
+    }
+  };
+  t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+  constructor(private readonly auth: AuthService, private readonly router: Router) {}
+  submit(): void {
+    if (this.form.invalid) return;
+    this.auth.register(this.form.getRawValue()).subscribe({
+      next: () => this.router.navigateByUrl('/cars'),
+      error: err => this.error = err?.error?.error?.message ?? 'Registration failed'
+    });
+  }
+}
