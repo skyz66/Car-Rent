@@ -151,7 +151,7 @@ import { Car } from '../models/types';
 
       <!-- Car grid -->
       <div class="grid grid-2">
-        <mat-card *ngFor="let car of cars" class="car-item">
+        <mat-card *ngFor="let car of cars" class="car-item" [routerLink]="['/cars', car.id]">
           <div class="car-img-placeholder">🚗</div>
           <mat-card-content style="padding: 1.1rem 1.1rem 0.5rem">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
@@ -169,9 +169,6 @@ import { Car } from '../models/types';
               <span class="spec-tag">{{ car.seats }} {{ t('specs.seats') }}</span>
             </div>
           </mat-card-content>
-          <mat-card-actions style="padding: 0.5rem 1.1rem 1rem">
-            <a class="btn-view" [routerLink]="['/cars', car.id]">{{ t('cars.viewDetails') }}</a>
-          </mat-card-actions>
         </mat-card>
       </div>
 
