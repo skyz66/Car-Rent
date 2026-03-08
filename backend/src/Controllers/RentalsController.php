@@ -32,20 +32,6 @@ final class RentalsController
 
         $pdo = Database::connect();
 
-        $stmt = $pdo->prepare('SELECT licence_issue_date FROM users WHERE id = ?');
-        $stmt->execute([$user['id']]);
-        $licence = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$licence || !$licence['licence_issue_date']) {
-            Response::json(false, null, 'LICENCE_REQUIRED', 'Licence issue date is required to book', 422);
-        }
-
-        $stmt = $pdo->prepare("SELECT CASE WHEN licence_issue_date <= (CURDATE() - INTERVAL 2 YEAR) THEN 1 ELSE 0 END AS ok FROM users WHERE id = ?");
-        $stmt->execute([$user['id']]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$row || (int) $row['ok'] !== 1) {
-            Response::json(false, null, 'LICENCE_TOO_RECENT', 'Driving licence must be at least 2 years old', 422);
-        }
-
         $stmt = $pdo->prepare(
             "SELECT COUNT(*) as count FROM rentals
              WHERE car_id = ?

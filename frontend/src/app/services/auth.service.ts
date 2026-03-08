@@ -30,6 +30,15 @@ export class AuthService {
     );
   }
 
+  changePassword(currentPassword: string, newPassword: string): Observable<{ updated: boolean }> {
+    return this.http
+      .patch<ApiResponse<{ updated: boolean }>>(`${environment.apiUrl}/profile/password`, {
+        current_password: currentPassword,
+        new_password: newPassword
+      })
+      .pipe(map((res) => res.data));
+  }
+
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);

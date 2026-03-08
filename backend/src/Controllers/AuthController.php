@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Auth;
+use App\AuthContext;
 use App\Database;
 use App\Response;
 use App\Utils\Request;
@@ -92,5 +93,38 @@ final class AuthController
             'user' => $payloadUser,
             'token' => $token,
         ]);
+    }
+
+    public static function changePassword(): void
+    {
+        $data = Request::json();
+        $missing = Validator::required($data, ['current_password', 'new_password']);
+        if ($missing) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
+        }
+
+        $user = AuthContext::user();
+        if (!$user) {
+            Response::json(false, null, 'UNAUTHORIZED', 'Unauthorized', 401);
+        }
+
+        $pdo = Database::connect();
+        $stmt = $pdo->prepare('SELECT password_hash FROM users WHERE id = ?');
+        $stmt->execute([$user['id']]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row || !password_verify((string) $data['current_password'], $row['password_hash'])) {
+            Response::json(false, null, 'INVALID_CREDENTIALS', 'Current password is incorrect', 401);
+        }
+
+        $newPassword = (string) $data['new_password'];
+        if (strlen($newPassword) < 6) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters', 422);
+        }
+
+        $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
+        $update = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $update->execute([$newHash, $user['id']]);
+
+        Response::json(true, ['updated' => true]);
     }
 }

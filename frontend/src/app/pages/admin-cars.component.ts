@@ -131,7 +131,7 @@ import { Car } from '../models/types';
           </mat-card-content>
           <mat-card-actions style="padding:0 1.1rem 1rem;display:flex;gap:8px">
             <button class="btn-edit" (click)="startEdit(car)">Edit</button>
-            <button class="btn-delete" (click)="delete(car.id)">Delete</button>
+            <button class="btn-delete" (click)="delete(car)">Delete</button>
           </mat-card-actions>
         </mat-card>
       </div>
@@ -188,9 +188,12 @@ export class AdminCarsComponent implements OnInit {
 
   cancelEdit(): void { this.resetForm(); }
 
-  delete(id: number): void {
-    this.adminService.deleteCar(id).subscribe(() => {
-      if (this.editingCarId === id) this.resetForm();
+  delete(car: Car): void {
+    const label = `${car.brand} ${car.model}`.trim();
+    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
+    if (!window.confirm(`Final confirmation: permanently delete ${label}?`)) return;
+    this.adminService.deleteCar(car.id).subscribe(() => {
+      if (this.editingCarId === car.id) this.resetForm();
       this.loadCars();
     });
   }

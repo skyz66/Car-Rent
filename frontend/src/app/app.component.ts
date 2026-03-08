@@ -15,9 +15,10 @@ import { AuthService } from './services/auth.service';
         <a class="brand" routerLink="/cars">DriveNow</a>
         <span class="toolbar-spacer"></span>
         <div class="menu-links">
-          <a mat-button class="nav-link-btn" routerLink="/cars" routerLinkActive="menu-active">{{ t('nav.cars') }}</a>
+          <a mat-button class="nav-link-btn" routerLink="/cars" routerLinkActive="menu-active" *ngIf="auth.isAuthenticated()">{{ t('nav.cars') }}</a>
           <a mat-button class="nav-link-btn" routerLink="/my-rentals" routerLinkActive="menu-active" *ngIf="auth.isAuthenticated()">{{ t('nav.myRentals') }}</a>
           <a mat-button class="nav-link-btn" routerLink="/reclamations" routerLinkActive="menu-active" *ngIf="auth.isAuthenticated()">{{ t('nav.reclamations') }}</a>
+          <a mat-button class="nav-link-btn" routerLink="/profile" routerLinkActive="menu-active" *ngIf="auth.isAuthenticated()">{{ t('nav.profile') }}</a>
           <a mat-button class="nav-link-btn" routerLink="/admin/dashboard" routerLinkActive="menu-active" *ngIf="auth.isAdmin()">{{ t('nav.admin') }}</a>
 
           <div class="lang-toggle">
@@ -43,11 +44,11 @@ export class AppComponent {
   private translations: Record<string, Record<string, string>> = {
     en: {
       'nav.cars': 'Cars', 'nav.myRentals': 'My Rentals', 'nav.reclamations': 'Reclamations',
-      'nav.admin': 'Admin', 'nav.login': 'Login', 'nav.register': 'Register', 'nav.logout': 'Logout',
+      'nav.profile': 'Profile', 'nav.admin': 'Admin', 'nav.login': 'Login', 'nav.register': 'Register', 'nav.logout': 'Logout',
     },
     fr: {
       'nav.cars': 'Véhicules', 'nav.myRentals': 'Mes Locations', 'nav.reclamations': 'Réclamations',
-      'nav.admin': 'Admin', 'nav.login': 'Connexion', 'nav.register': 'Inscription', 'nav.logout': 'Déconnexion',
+      'nav.profile': 'Profil', 'nav.admin': 'Admin', 'nav.login': 'Connexion', 'nav.register': 'Inscription', 'nav.logout': 'Déconnexion',
     }
   };
 

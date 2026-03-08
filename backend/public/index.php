@@ -12,7 +12,6 @@ use App\Controllers\ReclamationsController;
 use App\Controllers\DocumentsController;
 use App\Controllers\AdminController;
 use App\Middleware\AuthMiddleware;
-
 Config::load(__DIR__ . '/../.env');
 
 header('Access-Control-Allow-Origin: *');
@@ -30,6 +29,7 @@ $router = new Router();
 // Auth
 $router->post('/api/auth/register', [AuthController::class, 'register']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
+$router->patch('/api/profile/password', [AuthController::class, 'changePassword'], [AuthMiddleware::class . '::requireAuth']);
 
 // Cars
 $router->get('/api/cars', [CarsController::class, 'index']);
@@ -60,6 +60,14 @@ $router->get('/api/documents/{id}/download', [DocumentsController::class, 'downl
 // Admin dashboard
 $router->get('/api/admin/dashboard/top-rented', [AdminController::class, 'topRented'], [AuthMiddleware::class . '::requireAdmin']);
 $router->get('/api/admin/dashboard/summary', [AdminController::class, 'summary'], [AuthMiddleware::class . '::requireAdmin']);
+$router->get('/api/admin/dashboard/rentals-by-day', [AdminController::class, 'rentalsByDay'], [AuthMiddleware::class . '::requireAdmin']);
+
+// Admin users
+$router->get('/api/admin/users', [AdminController::class, 'users'], [AuthMiddleware::class . '::requireAdmin']);
+$router->post('/api/admin/users', [AdminController::class, 'createUser'], [AuthMiddleware::class . '::requireAdmin']);
+$router->put('/api/admin/users/{id}', [AdminController::class, 'updateUser'], [AuthMiddleware::class . '::requireAdmin']);
+$router->delete('/api/admin/users/{id}', [AdminController::class, 'deleteUser'], [AuthMiddleware::class . '::requireAdmin']);
+
 
 try {
     $router->dispatch($method, $uri);

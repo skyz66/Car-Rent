@@ -65,10 +65,6 @@ import { AuthService } from '../services/auth.service';
             <div class="field"><label>{{ t('email') }}</label><input type="email" formControlName="email" placeholder="you@example.com" /></div>
             <div class="field"><label>{{ t('phone') }}</label><input type="tel" formControlName="phone" placeholder="+216 xx xxx xxx" /></div>
             <div class="field span-2"><label>{{ t('password') }}</label><input type="password" formControlName="password" [placeholder]="t('passwordPh')" /></div>
-            <div class="section-sep"><hr /><span>{{ t('licenceSection') }}</span><hr /></div>
-            <div class="field span-2"><label>{{ t('licenceNum') }}</label><input type="text" formControlName="licence_number" placeholder="TN-2020-123456" /></div>
-            <div class="field"><label>{{ t('issueDate') }}</label><input type="date" formControlName="licence_issue_date" /></div>
-            <div class="field"><label>{{ t('expiryDate') }}</label><input type="date" formControlName="licence_expiry_date" /></div>
           </div>
           <button type="submit" class="btn-register">{{ t('submit') }}</button>
           <a class="link" routerLink="/login">{{ t('login') }}</a>
@@ -85,24 +81,19 @@ export class RegisterComponent {
   readonly form = this.fb.group({
     first_name: ['', Validators.required], last_name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]], phone: [''],
-    password: ['', Validators.required], licence_number: ['', Validators.required],
-    licence_issue_date: ['', Validators.required], licence_expiry_date: ['', Validators.required]
+    password: ['', Validators.required]
   });
   private tr: Record<string, Record<string, string>> = {
     en: {
       eyebrow: 'Get Started', title: 'Create your account', subtitle: 'Register once and start renting in minutes.',
       firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone',
       password: 'Password', passwordPh: 'Create a strong password',
-      licenceSection: "Driver's Licence", licenceNum: 'Licence number',
-      issueDate: 'Issue date', expiryDate: 'Expiry date',
       submit: 'Create Account →', login: 'Already have an account? Sign in',
     },
     fr: {
       eyebrow: 'Commencer', title: 'Créer votre compte', subtitle: 'Inscrivez-vous une fois et commencez à louer en quelques minutes.',
       firstName: 'Prénom', lastName: 'Nom', email: 'Adresse e-mail', phone: 'Téléphone',
       password: 'Mot de passe', passwordPh: 'Créez un mot de passe fort',
-      licenceSection: 'Permis de conduire', licenceNum: 'Numéro de permis',
-      issueDate: "Date d'émission", expiryDate: "Date d'expiration",
       submit: 'Créer mon compte →', login: 'Déjà un compte ? Se connecter',
     }
   };

@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Database;
 use App\Response;
+use DateTimeImmutable;
 use PDO;
 
 final class AdminController
@@ -36,5 +37,124 @@ final class AdminController
             'ongoing_rentals' => $ongoing,
             'revenue' => $revenue,
         ]);
+    }
+
+    public static function rentalsByDay(): void
+    {
+        $pdo = Database::connect();
+        $stmt = $pdo->prepare(
+            "SELECT DATE(start_date) AS day, COUNT(*) AS count
+             FROM rentals
+             WHERE start_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+             GROUP BY DATE(start_date)
+             ORDER BY day"
+        );
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $countsByDay = [];
+        foreach ($rows as $row) {
+            $countsByDay[$row['day']] = (int) $row['count'];
+        }
+
+        $today = new DateTimeImmutable('today');
+        $series = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $day = $today->modify("-{$i} days")->format('Y-m-d');
+            $series[] = [
+                'day' => $day,
+                'count' => $countsByDay[$day] ?? 0,
+            ];
+        }
+
+        Response::json(true, $series);
+    }
+
+    public static function users(): void
+    {
+        $pdo = Database::connect();
+        $stmt = $pdo->query('SELECT id, role, first_name, last_name, email, phone, created_at FROM users ORDER BY created_at DESC');
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        Response::json(true, $rows);
+    }
+
+    public static function createUser(): void
+    {
+        $data = \App\Utils\Request::json();
+        $missing = \App\Utils\Validator::required($data, ['first_name', 'last_name', 'email', 'password', 'role']);
+        if ($missing) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
+        }
+        if (!\App\Utils\Validator::isEmail((string) $data['email'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
+        }
+
+        $pdo = Database::connect();
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
+        $stmt->execute([$data['email']]);
+        if ($stmt->fetch()) {
+            Response::json(false, null, 'EMAIL_EXISTS', 'Email already registered', 409);
+        }
+
+        $passwordHash = password_hash((string) $data['password'], PASSWORD_BCRYPT);
+        $stmt = $pdo->prepare(
+            'INSERT INTO users (role, first_name, last_name, email, phone, password_hash)
+             VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $data['role'],
+            $data['first_name'],
+            $data['last_name'],
+            $data['email'],
+            $data['phone'] ?? null,
+            $passwordHash,
+        ]);
+
+        Response::json(true, ['id' => (int) $pdo->lastInsertId()]);
+    }
+
+    public static function updateUser(string $id): void
+    {
+        $data = \App\Utils\Request::json();
+        $missing = \App\Utils\Validator::required($data, ['first_name', 'last_name', 'email', 'role']);
+        if ($missing) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
+        }
+        if (!\App\Utils\Validator::isEmail((string) $data['email'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
+        }
+
+        $pdo = Database::connect();
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ? AND id <> ?');
+        $stmt->execute([$data['email'], $id]);
+        if ($stmt->fetch()) {
+            Response::json(false, null, 'EMAIL_EXISTS', 'Email already registered', 409);
+        }
+
+        $stmt = $pdo->prepare('UPDATE users SET role=?, first_name=?, last_name=?, email=?, phone=? WHERE id=?');
+        $stmt->execute([
+            $data['role'],
+            $data['first_name'],
+            $data['last_name'],
+            $data['email'],
+            $data['phone'] ?? null,
+            $id,
+        ]);
+
+        if (!empty($data['password'])) {
+            $hash = password_hash((string) $data['password'], PASSWORD_BCRYPT);
+            $stmt = $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?');
+            $stmt->execute([$hash, $id]);
+        }
+
+        Response::json(true, ['updated' => true]);
+    }
+
+    public static function deleteUser(string $id): void
+    {
+        $pdo = Database::connect();
+        $stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
+        $stmt->execute([$id]);
+        Response::json(true, ['deleted' => true]);
     }
 }
