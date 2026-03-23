@@ -29,6 +29,7 @@ $router = new Router();
 // Auth
 $router->post('/api/auth/register', [AuthController::class, 'register']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
+$router->post('/api/auth/google', [AuthController::class, 'googleLogin']);
 $router->patch('/api/profile/password', [AuthController::class, 'changePassword'], [AuthMiddleware::class . '::requireAuth']);
 
 // Cars

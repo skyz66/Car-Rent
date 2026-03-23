@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   standalone: true,
@@ -88,6 +89,7 @@ import { AuthService } from '../services/auth.service';
     }
     .btn-signin:hover { background: var(--blue-dark); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(23,87,240,0.35); }
     .divider { height: 1px; background: rgba(10,14,26,0.08); margin: 4px 0; }
+    .google-wrap { margin-top: 10px; display: flex; justify-content: center; }
     .link {
       font-size: 0.875rem; color: var(--blue); font-weight: 500;
       text-decoration: none; text-align: center; cursor: pointer;
@@ -116,6 +118,9 @@ import { AuthService } from '../services/auth.service';
           </div>
           <button type="submit" class="btn-signin">{{ t('submit') }}</button>
           <div class="divider"></div>
+          <div class="google-wrap">
+            <div id="googleBtn"></div>
+          </div>
           <a class="link" routerLink="/register">{{ t('register') }}</a>
           <div class="error-box" *ngIf="error">{{ error }}</div>
         </form>
@@ -123,7 +128,7 @@ import { AuthService } from '../services/auth.service';
     </div>
   `
 })
-export class LoginComponent {
+export class LoginComponent implements AfterViewInit {
   private readonly fb = inject(FormBuilder);
   error = '';
   lang: 'en' | 'fr' = 'en';
@@ -149,6 +154,32 @@ export class LoginComponent {
   };
   t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
+
+  ngAfterViewInit(): void {
+    const w = window as any;
+    if (!w.google?.accounts?.id || !environment.googleClientId) return;
+    w.google.accounts.id.initialize({
+      client_id: environment.googleClientId,
+      callback: (resp: { credential: string }) => {
+        this.auth.googleLogin(resp.credential).subscribe({
+          next: data => this.router.navigateByUrl(data.user.role === 'admin' ? '/admin/dashboard' : '/cars'),
+          error: err => this.error = err?.error?.error?.message ?? 'Google login failed'
+        });
+      },
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+    const btn = document.getElementById('googleBtn');
+    if (btn) {
+      w.google.accounts.id.renderButton(btn, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        width: 320
+      });
+    }
+  }
   submit(): void {
     if (this.form.invalid) return;
     const { email, password } = this.form.getRawValue();

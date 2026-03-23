@@ -46,7 +46,10 @@ import { AuthService } from '../services/auth.service';
 
           <h3 style="font-family:var(--font-head);font-size:1.05rem;font-weight:700;margin:0.75rem 0 0.5rem">Change Password</h3>
           <form [formGroup]="form" (ngSubmit)="submit()">
-            <div class="field"><label>Current password</label><input type="password" formControlName="current_password" /></div>
+            <div class="field">
+              <label>Current password</label>
+              <input type="password" formControlName="current_password" />
+            </div>
             <div class="field"><label>New password</label><input type="password" formControlName="new_password" /></div>
             <div class="field"><label>Confirm new password</label><input type="password" formControlName="confirm_password" /></div>
             <button class="btn-submit" type="submit">Update Password</button>
@@ -67,7 +70,7 @@ export class ProfileComponent {
   errorMessage = '';
 
   readonly form = this.fb.group({
-    current_password: ['', Validators.required],
+    current_password: [''],
     new_password: ['', [Validators.required, Validators.minLength(6)]],
     confirm_password: ['', Validators.required],
   });
@@ -80,7 +83,7 @@ export class ProfileComponent {
     this.successMessage = '';
     this.errorMessage = '';
     if (this.form.invalid) {
-      this.errorMessage = 'Please fill out all fields.';
+      this.errorMessage = 'Please fill out all required fields.';
       return;
     }
     const { current_password, new_password, confirm_password } = this.form.getRawValue();

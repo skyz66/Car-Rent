@@ -30,6 +30,13 @@ export class AuthService {
     );
   }
 
+  googleLogin(idToken: string): Observable<AuthPayload> {
+    return this.http.post<ApiResponse<AuthPayload>>(`${environment.apiUrl}/auth/google`, { id_token: idToken }).pipe(
+      map((res) => res.data),
+      tap((data) => this.setSession(data))
+    );
+  }
+
   changePassword(currentPassword: string, newPassword: string): Observable<{ updated: boolean }> {
     return this.http
       .patch<ApiResponse<{ updated: boolean }>>(`${environment.apiUrl}/profile/password`, {

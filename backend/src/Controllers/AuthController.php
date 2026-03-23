@@ -3,11 +3,14 @@
 namespace App\Controllers;
 
 use App\Auth;
+use App\Config;
 use App\AuthContext;
 use App\Database;
 use App\Response;
 use App\Utils\Request;
 use App\Utils\Validator;
+use Firebase\JWT\JWK;
+use Firebase\JWT\JWT;
 use PDO;
 
 final class AuthController
@@ -98,7 +101,7 @@ final class AuthController
     public static function changePassword(): void
     {
         $data = Request::json();
-        $missing = Validator::required($data, ['current_password', 'new_password']);
+        $missing = Validator::required($data, ['new_password']);
         if ($missing) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
         }
@@ -112,7 +115,12 @@ final class AuthController
         $stmt = $pdo->prepare('SELECT password_hash FROM users WHERE id = ?');
         $stmt->execute([$user['id']]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$row || !password_verify((string) $data['current_password'], $row['password_hash'])) {
+        $currentHash = $row['password_hash'] ?? '';
+        $currentProvided = isset($data['current_password']) && $data['current_password'] !== '';
+        if ($currentHash && !$currentProvided) {
+            Response::json(false, null, 'INVALID_CREDENTIALS', 'Current password is required', 401);
+        }
+        if ($currentHash && $currentProvided && !password_verify((string) $data['current_password'], $currentHash)) {
             Response::json(false, null, 'INVALID_CREDENTIALS', 'Current password is incorrect', 401);
         }
 
@@ -126,5 +134,94 @@ final class AuthController
         $update->execute([$newHash, $user['id']]);
 
         Response::json(true, ['updated' => true]);
+    }
+
+    public static function googleLogin(): void
+    {
+        $data = Request::json();
+        $missing = Validator::required($data, ['id_token']);
+        if ($missing) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
+        }
+
+        $clientId = Config::get('GOOGLE_CLIENT_ID');
+        if (!$clientId) {
+            Response::json(false, null, 'CONFIG_ERROR', 'Google client ID not configured', 500);
+        }
+
+        $jwksJson = @file_get_contents('https://www.googleapis.com/oauth2/v3/certs');
+        if (!$jwksJson) {
+            Response::json(false, null, 'GOOGLE_KEYS', 'Failed to fetch Google public keys', 500);
+        }
+        $jwks = json_decode($jwksJson, true);
+        if (!is_array($jwks)) {
+            Response::json(false, null, 'GOOGLE_KEYS', 'Invalid Google public keys', 500);
+        }
+
+        try {
+            $keys = JWK::parseKeySet($jwks);
+            $payload = JWT::decode((string) $data['id_token'], $keys);
+        } catch (\Throwable $ex) {
+            Response::json(false, null, 'INVALID_TOKEN', 'Invalid Google ID token', 401);
+        }
+
+        $iss = $payload->iss ?? '';
+        if (!in_array($iss, ['accounts.google.com', 'https://accounts.google.com'], true)) {
+            Response::json(false, null, 'INVALID_TOKEN', 'Invalid token issuer', 401);
+        }
+        if (($payload->aud ?? '') !== $clientId) {
+            Response::json(false, null, 'INVALID_TOKEN', 'Invalid token audience', 401);
+        }
+        if (!($payload->email ?? '') || !($payload->email_verified ?? false)) {
+            Response::json(false, null, 'INVALID_TOKEN', 'Email not verified', 401);
+        }
+
+        $email = (string) $payload->email;
+        $firstName = (string) ($payload->given_name ?? '');
+        $lastName = (string) ($payload->family_name ?? '');
+        if ($firstName === '' && $lastName === '' && isset($payload->name)) {
+            $parts = explode(' ', (string) $payload->name, 2);
+            $firstName = $parts[0] ?? 'User';
+            $lastName = $parts[1] ?? '';
+        }
+
+        $pdo = Database::connect();
+        $stmt = $pdo->prepare('SELECT id, role, first_name, last_name, email FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO users (role, first_name, last_name, email, phone, password_hash)
+                 VALUES (\'customer\', ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $firstName ?: 'User',
+                $lastName ?: 'Google',
+                $email,
+                null,
+                ''
+            ]);
+            $user = [
+                'id' => (int) $pdo->lastInsertId(),
+                'role' => 'customer',
+                'first_name' => $firstName ?: 'User',
+                'last_name' => $lastName ?: 'Google',
+                'email' => $email,
+            ];
+        }
+
+        $token = Auth::generateToken([
+            'id' => (int) $user['id'],
+            'role' => $user['role'],
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name'],
+            'email' => $user['email'],
+        ]);
+
+        Response::json(true, [
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
 }

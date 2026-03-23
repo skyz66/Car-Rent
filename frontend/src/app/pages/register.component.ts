@@ -60,11 +60,12 @@ import { AuthService } from '../services/auth.service';
         <p class="subtitle">{{ t('subtitle') }}</p>
         <form [formGroup]="form" (ngSubmit)="submit()">
           <div class="form-grid">
-            <div class="field"><label>{{ t('firstName') }}</label><input type="text" formControlName="first_name" placeholder="Jean" /></div>
-            <div class="field"><label>{{ t('lastName') }}</label><input type="text" formControlName="last_name" placeholder="Dupont" /></div>
+            <div class="field"><label>{{ t('firstName') }}</label><input type="text" formControlName="first_name" placeholder="Ahmed Amine" /></div>
+            <div class="field"><label>{{ t('lastName') }}</label><input type="text" formControlName="last_name" placeholder="Lahbib" /></div>
             <div class="field"><label>{{ t('email') }}</label><input type="email" formControlName="email" placeholder="you@example.com" /></div>
             <div class="field"><label>{{ t('phone') }}</label><input type="tel" formControlName="phone" placeholder="+216 xx xxx xxx" /></div>
             <div class="field span-2"><label>{{ t('password') }}</label><input type="password" formControlName="password" [placeholder]="t('passwordPh')" /></div>
+            <div class="field span-2"><label>{{ t('confirmPassword') }}</label><input type="password" formControlName="confirm_password" [placeholder]="t('confirmPasswordPh')" /></div>
           </div>
           <button type="submit" class="btn-register">{{ t('submit') }}</button>
           <a class="link" routerLink="/login">{{ t('login') }}</a>
@@ -81,19 +82,22 @@ export class RegisterComponent {
   readonly form = this.fb.group({
     first_name: ['', Validators.required], last_name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]], phone: [''],
-    password: ['', Validators.required]
+    password: ['', Validators.required],
+    confirm_password: ['', Validators.required]
   });
   private tr: Record<string, Record<string, string>> = {
     en: {
       eyebrow: 'Get Started', title: 'Create your account', subtitle: 'Register once and start renting in minutes.',
       firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone',
       password: 'Password', passwordPh: 'Create a strong password',
+      confirmPassword: 'Confirm password', confirmPasswordPh: 'Re-enter your password',
       submit: 'Create Account →', login: 'Already have an account? Sign in',
     },
     fr: {
       eyebrow: 'Commencer', title: 'Créer votre compte', subtitle: 'Inscrivez-vous une fois et commencez à louer en quelques minutes.',
       firstName: 'Prénom', lastName: 'Nom', email: 'Adresse e-mail', phone: 'Téléphone',
       password: 'Mot de passe', passwordPh: 'Créez un mot de passe fort',
+      confirmPassword: 'Confirmer le mot de passe', confirmPasswordPh: 'Retapez votre mot de passe',
       submit: 'Créer mon compte →', login: 'Déjà un compte ? Se connecter',
     }
   };
@@ -101,7 +105,12 @@ export class RegisterComponent {
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
   submit(): void {
     if (this.form.invalid) return;
-    this.auth.register(this.form.getRawValue()).subscribe({
+    const { confirm_password, ...payload } = this.form.getRawValue();
+    if (payload.password !== confirm_password) {
+      this.error = 'Passwords do not match';
+      return;
+    }
+    this.auth.register(payload).subscribe({
       next: () => this.router.navigateByUrl('/cars'),
       error: err => this.error = err?.error?.error?.message ?? 'Registration failed'
     });

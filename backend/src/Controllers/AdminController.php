@@ -73,7 +73,7 @@ final class AdminController
     public static function users(): void
     {
         $pdo = Database::connect();
-        $stmt = $pdo->query('SELECT id, role, first_name, last_name, email, phone, created_at FROM users ORDER BY created_at DESC');
+        $stmt = $pdo->query('SELECT id, role, first_name, last_name, email, phone FROM users ORDER BY id DESC');
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         Response::json(true, $rows);
     }
