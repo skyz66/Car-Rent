@@ -9,7 +9,6 @@ use App\Controllers\AuthController;
 use App\Controllers\CarsController;
 use App\Controllers\RentalsController;
 use App\Controllers\ReclamationsController;
-use App\Controllers\DocumentsController;
 use App\Controllers\AdminController;
 use App\Middleware\AuthMiddleware;
 Config::load(__DIR__ . '/../.env');
@@ -53,10 +52,6 @@ $router->get('/api/reclamations/my', [ReclamationsController::class, 'my'], [Aut
 $router->get('/api/reclamations', [ReclamationsController::class, 'all'], [AuthMiddleware::class . '::requireAdmin']);
 $router->patch('/api/reclamations/{id}/status', [ReclamationsController::class, 'updateStatus'], [AuthMiddleware::class . '::requireAdmin']);
 
-// Documents
-$router->post('/api/rentals/{id}/documents/contract', [DocumentsController::class, 'createContract'], [AuthMiddleware::class . '::requireAdmin']);
-$router->post('/api/rentals/{id}/documents/invoice', [DocumentsController::class, 'createInvoice'], [AuthMiddleware::class . '::requireAdmin']);
-$router->get('/api/documents/{id}/download', [DocumentsController::class, 'download'], [AuthMiddleware::class . '::requireAuth']);
 
 // Admin dashboard
 $router->get('/api/admin/dashboard/top-rented', [AdminController::class, 'topRented'], [AuthMiddleware::class . '::requireAdmin']);

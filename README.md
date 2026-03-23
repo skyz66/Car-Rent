@@ -100,12 +100,6 @@ curl -X PATCH http://localhost:8000/api/rentals/1/status \
   -d '{"status":"confirmed"}'
 ```
 
-### Generate contract (admin)
-```bash
-curl -X POST http://localhost:8000/api/rentals/1/documents/contract \
-  -H "Authorization: Bearer <TOKEN>"
-```
-
 ## Backend Structure
 
 ```
@@ -134,7 +128,7 @@ backend/
 
 1. Phase 1: Auth + cars list + rental create with availability + licence rule
 2. Phase 2: My rentals + admin rentals status + dashboard
-3. Phase 3: Reclamations + documents PDFs
+3. Phase 3: Reclamations
 4. Phase 4: Polish (UI + validations + performance)
 
 ## Notes
