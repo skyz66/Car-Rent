@@ -26,6 +26,12 @@ final class AuthController
         if (!Validator::isEmail((string) $data['email'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
+        if (!Validator::isPassword((string) $data['password'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters and contain at least one letter and one number', 422);
+        }
+        if (!empty($data['phone']) && !Validator::isPhone((string) $data['phone'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
+        }
 
         $pdo = Database::connect();
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
@@ -36,7 +42,7 @@ final class AuthController
 
         $passwordHash = password_hash((string) $data['password'], PASSWORD_BCRYPT);
         $stmt = $pdo->prepare(
-            'INSERT INTO users (role, first_name, last_name, email, phone, password_hash, licence_number, licence_issue_date, licence_expiry_date)
+            'INSERT INTO users (role, first_name, last_name, email, phone, password_hash)
              VALUES (\'customer\', ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
@@ -45,9 +51,6 @@ final class AuthController
             $data['email'],
             $data['phone'] ?? null,
             $passwordHash,
-            $data['licence_number'] ?? null,
-            $data['licence_issue_date'] ?? null,
-            $data['licence_expiry_date'] ?? null,
         ]);
 
         $userId = (int) $pdo->lastInsertId();
@@ -73,6 +76,9 @@ final class AuthController
         $missing = Validator::required($data, ['email', 'password']);
         if ($missing) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
+        }
+        if (!Validator::isEmail((string) $data['email'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
 
         $pdo = Database::connect();
@@ -125,8 +131,8 @@ final class AuthController
         }
 
         $newPassword = (string) $data['new_password'];
-        if (strlen($newPassword) < 6) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters', 422);
+        if (!Validator::isPassword($newPassword)) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters and contain at least one letter and one number', 422);
         }
 
         $newHash = password_hash($newPassword, PASSWORD_BCRYPT);

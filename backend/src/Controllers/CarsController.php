@@ -115,6 +115,27 @@ final class CarsController
         if ($missing) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
         }
+        if (!Validator::isPlateNumber((string) $data['plate_number'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid plate number format', 422);
+        }
+        if (!Validator::isYear((string) $data['year'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid year format', 422);
+        }
+        if (!Validator::isPositiveInteger((string) $data['seats'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Seats must be a positive integer', 422);
+        }
+        if (!Validator::isDecimal((string) $data['daily_price'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Daily price must be a valid number with up to 2 decimals', 422);
+        }
+        if (!Validator::inList((string) $data['gearbox'], ['manual', 'automatic'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid gearbox value', 422);
+        }
+        if (!Validator::inList((string) $data['fuel'], ['petrol', 'diesel', 'hybrid', 'electric'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid fuel value', 422);
+        }
+        if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
+        }
 
         $pdo = Database::connect();
         $stmt = $pdo->prepare('INSERT INTO cars (plate_number, brand, model, year, category, gearbox, fuel, seats, daily_price, status)
@@ -141,6 +162,27 @@ final class CarsController
         $missing = Validator::required($data, ['plate_number', 'brand', 'model', 'year', 'gearbox', 'fuel', 'seats', 'daily_price', 'status']);
         if ($missing) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
+        }
+        if (!Validator::isPlateNumber((string) $data['plate_number'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid plate number format', 422);
+        }
+        if (!Validator::isYear((string) $data['year'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid year format', 422);
+        }
+        if (!Validator::isPositiveInteger((string) $data['seats'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Seats must be a positive integer', 422);
+        }
+        if (!Validator::isDecimal((string) $data['daily_price'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Daily price must be a valid number with up to 2 decimals', 422);
+        }
+        if (!Validator::inList((string) $data['gearbox'], ['manual', 'automatic'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid gearbox value', 422);
+        }
+        if (!Validator::inList((string) $data['fuel'], ['petrol', 'diesel', 'hybrid', 'electric'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid fuel value', 422);
+        }
+        if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
         }
         $pdo = Database::connect();
         $stmt = $pdo->prepare('UPDATE cars SET plate_number=?, brand=?, model=?, year=?, category=?, gearbox=?, fuel=?, seats=?, daily_price=?, status=? WHERE id=?');

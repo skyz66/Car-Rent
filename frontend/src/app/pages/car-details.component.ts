@@ -34,10 +34,28 @@ import { Car } from '../models/types';
       box-shadow: 0 2px 14px var(--blue-glow); transition: all 0.18s;
     }
     .btn-book:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    .detail-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+    .detail-fallback {
+      position: relative;
+      z-index: 1;
+      font-size: 4rem;
+      color: #fff;
+      font-weight: 700;
+    }
   `],
   template: `
     <div class="page" *ngIf="car">
-      <div class="detail-hero"><span>🚙</span></div>
+      <div class="detail-hero">
+        <img *ngIf="car.main_image" [src]="car.main_image" [alt]="car.brand + ' ' + car.model" class="detail-image" />
+        <span *ngIf="!car.main_image" class="detail-fallback">No Image</span>
+      </div>
       <div class="grid grid-2" style="align-items:start;gap:1.25rem">
         <mat-card>
           <mat-card-content style="padding:1.75rem">
@@ -84,6 +102,7 @@ export class CarDetailsComponent implements OnInit {
   bookingMessage = '';
   lang: 'en' | 'fr' = 'en';
   readonly form = this.fb.group({ start_date: ['', Validators.required], end_date: ['', Validators.required] });
+
   private tr: Record<string, Record<string, string>> = {
     en: {
       perDay: 'per day', gearbox: 'Gearbox', fuel: 'Fuel', seats: 'Seats',
@@ -92,18 +111,22 @@ export class CarDetailsComponent implements OnInit {
       checkAvail: 'Check Availability', bookNow: 'Book Now',
     },
     fr: {
-      perDay: 'par jour', gearbox: 'Boîte de vitesse', fuel: 'Carburant', seats: 'Places',
-      bookTitle: 'Réserver ce véhicule', bookSubtitle: 'Sélectionnez votre période de location et confirmez instantanément.',
-      startDate: 'Date & heure de début', endDate: 'Date & heure de fin',
-      checkAvail: 'Vérifier la disponibilité', bookNow: 'Réserver maintenant',
+      perDay: 'par jour', gearbox: 'Boite de vitesse', fuel: 'Carburant', seats: 'Places',
+      bookTitle: 'Reserver ce vehicule', bookSubtitle: 'Selectionnez votre periode de location et confirmez instantanement.',
+      startDate: 'Date & heure de debut', endDate: 'Date & heure de fin',
+      checkAvail: 'Verifier la disponibilite', bookNow: 'Reserver maintenant',
     }
   };
+
   t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+
   constructor(private readonly route: ActivatedRoute, private readonly carsService: CarsService, private readonly rentalsService: RentalsService) {}
+
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.carsService.detail(id).subscribe(car => this.car = car);
   }
+
   check(): void {
     if (!this.car || this.form.invalid) return;
     const { start_date, end_date } = this.form.getRawValue();
@@ -112,6 +135,7 @@ export class CarDetailsComponent implements OnInit {
       error: err => this.availabilityMessage = err?.error?.error?.message ?? 'Failed'
     });
   }
+
   book(): void {
     if (!this.car || this.form.invalid) return;
     const { start_date, end_date } = this.form.getRawValue();

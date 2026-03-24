@@ -17,6 +17,41 @@ final class Validator
 
     public static function isEmail(string $value): bool
     {
-        return (bool) filter_var($value, FILTER_VALIDATE_EMAIL);
+        return (bool) preg_match('/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i', $value);
+    }
+
+    public static function isPhone(string $value): bool
+    {
+        return (bool) preg_match('/^\+?[0-9 ]{8,15}$/', $value);
+    }
+
+    public static function isPlateNumber(string $value): bool
+    {
+        return (bool) preg_match('/^\d{1,3}\s?TU\s?\d{1,4}$/i', trim($value));
+    }
+
+    public static function isPassword(string $value): bool
+    {
+        return (bool) preg_match('/^(?=.*[A-Za-z])(?=.*\d).{6,}$/', $value);
+    }
+
+    public static function isYear(string $value): bool
+    {
+        return (bool) preg_match('/^(19\d{2}|20\d{2}|21\d{2})$/', $value);
+    }
+
+    public static function isPositiveInteger(string $value): bool
+    {
+        return (bool) preg_match('/^[1-9]\d*$/', $value);
+    }
+
+    public static function isDecimal(string $value): bool
+    {
+        return (bool) preg_match('/^\d+(\.\d{1,2})?$/', $value);
+    }
+
+    public static function inList(string $value, array $allowed): bool
+    {
+        return in_array($value, $allowed, true);
     }
 }

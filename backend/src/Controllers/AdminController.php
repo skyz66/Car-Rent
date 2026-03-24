@@ -88,6 +88,12 @@ final class AdminController
         if (!\App\Utils\Validator::isEmail((string) $data['email'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
+        if (!empty($data['phone']) && !\App\Utils\Validator::isPhone((string) $data['phone'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
+        }
+        if (!\App\Utils\Validator::isPassword((string) $data['password'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters and contain at least one letter and one number', 422);
+        }
 
         $pdo = Database::connect();
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
@@ -123,6 +129,9 @@ final class AdminController
         if (!\App\Utils\Validator::isEmail((string) $data['email'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
+        if (!empty($data['phone']) && !\App\Utils\Validator::isPhone((string) $data['phone'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
+        }
 
         $pdo = Database::connect();
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ? AND id <> ?');
@@ -142,6 +151,9 @@ final class AdminController
         ]);
 
         if (!empty($data['password'])) {
+            if (!\App\Utils\Validator::isPassword((string) $data['password'])) {
+                Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters and contain at least one letter and one number', 422);
+            }
             $hash = password_hash((string) $data['password'], PASSWORD_BCRYPT);
             $stmt = $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?');
             $stmt->execute([$hash, $id]);

@@ -745,7 +745,7 @@ mat-form-field { width: 100%; }
 .detail-hero {
   background: var(--ink);
   border-radius: var(--r-lg);
-  height: 220px;
+  height: 360px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -833,4 +833,5 @@ mat-form-field { width: 100%; }
   .dash-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .spec-grid { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: 1fr 1fr; }
+  .detail-hero { height: 260px; }
 }

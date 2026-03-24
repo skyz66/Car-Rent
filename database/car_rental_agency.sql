@@ -47,8 +47,8 @@ CREATE TABLE `cars` (
 --
 
 INSERT INTO `cars` (`id`, `plate_number`, `brand`, `model`, `year`, `category`, `gearbox`, `fuel`, `seats`, `daily_price`, `status`, `created_at`) VALUES
-(1, 'CAR-101', 'Renault', 'Model E', 2021, 'suv', 'manual', 'hybrid', 4, 140.00, 'available', '2026-03-09 04:32:39'),
-(12, 'CAR-112', 'Audi', 'Model C', 2016, 'luxury', 'manual', 'diesel', 6, 155.00, 'available', '2026-03-09 04:32:39');
+(1, '123 TU 4567', 'Renault', 'Model E', 2021, 'suv', 'manual', 'hybrid', 4, 140.00, 'available', '2026-03-09 04:32:39'),
+(12, '98 TU 321', 'Audi', 'Model C', 2016, 'luxury', 'manual', 'diesel', 6, 155.00, 'available', '2026-03-09 04:32:39');
 
 -- --------------------------------------------------------
 

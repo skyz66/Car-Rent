@@ -90,7 +90,7 @@ import { Car } from '../models/types';
           </h3>
           <form [formGroup]="form" (ngSubmit)="submit()">
             <div class="form-grid">
-              <div class="field"><label>Plate Number</label><input type="text" formControlName="plate_number" placeholder="CAR-001" /></div>
+              <div class="field"><label>Plate Number</label><input type="text" formControlName="plate_number" placeholder="123 TU 4567" /></div>
               <div class="field"><label>Brand</label><input type="text" formControlName="brand" placeholder="Toyota" /></div>
               <div class="field"><label>Model</label><input type="text" formControlName="model" placeholder="Corolla" /></div>
               <div class="field"><label>Year</label><input type="number" formControlName="year" placeholder="2023" /></div>

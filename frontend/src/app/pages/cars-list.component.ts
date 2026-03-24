@@ -11,7 +11,6 @@ import { Car } from '../models/types';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, MatCardModule, MatButtonModule],
   styles: [`
-    /* ── Filter inputs: fully custom, no Material underline ── */
     .filter-row {
       display: flex;
       flex-wrap: wrap;
@@ -88,9 +87,9 @@ import { Car } from '../models/types';
       white-space: nowrap;
     }
     .btn-reset:hover { background: rgba(10,14,26,0.05); color: var(--ink); }
+    .car-photo { object-fit: cover; width: 100%; display: block; }
   `],
   template: `
-    <!-- Hero -->
     <div class="hero">
       <div class="hero-bg"></div>
       <div class="hero-grid"></div>
@@ -102,13 +101,10 @@ import { Car } from '../models/types';
     </div>
 
     <div class="page">
-
-      <!-- ── Filters card ── -->
       <mat-card class="filters-card" style="margin-bottom:1.5rem;padding:1.5rem">
         <div class="filters-label">{{ t('filters.title') }}</div>
         <form [formGroup]="filters" (ngSubmit)="load()">
           <div class="filter-row">
-
             <div class="filter-field">
               <label>{{ t('filters.keyword') }}</label>
               <input type="text" formControlName="search" [placeholder]="t('filters.keywordPh')" />
@@ -138,21 +134,19 @@ import { Car } from '../models/types';
               <button type="submit" class="btn-apply">{{ t('filters.apply') }}</button>
               <button type="button" class="btn-reset" (click)="filters.reset(); load()">{{ t('filters.reset') }}</button>
             </div>
-
           </div>
         </form>
       </mat-card>
 
-      <!-- Section header -->
       <div class="section-header">
         <span class="section-title">{{ t('cars.sectionTitle') }}</span>
         <span class="count-badge">{{ cars.length }} {{ t('cars.countLabel') }}</span>
       </div>
 
-      <!-- Car grid -->
       <div class="grid grid-2">
         <mat-card *ngFor="let car of cars" class="car-item" [routerLink]="['/cars', car.id]">
-          <div class="car-img-placeholder">🚗</div>
+          <div class="car-img-placeholder" *ngIf="!car.main_image">No Image</div>
+          <img *ngIf="car.main_image" [src]="car.main_image" [alt]="car.brand + ' ' + car.model" class="car-img-placeholder car-photo" />
           <mat-card-content style="padding: 1.1rem 1.1rem 0.5rem">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
               <h3 class="card-head" style="margin:0;font-size:1rem">{{ car.brand }} {{ car.model }}</h3>
@@ -171,7 +165,6 @@ import { Car } from '../models/types';
           </mat-card-content>
         </mat-card>
       </div>
-
     </div>
   `
 })
@@ -200,15 +193,15 @@ export class CarsListComponent implements OnInit {
     },
     fr: {
       'hero.eyebrow': 'Flotte disponible maintenant',
-      'hero.h1a': 'Trouvez Votre', 'hero.h1b': 'Véhicule Idéal',
-      'hero.subtitle': 'Parcourez nos véhicules premium et réservez en quelques clics. Prix transparents, zéro frais cachés.',
-      'filters.title': 'Filtrer les véhicules',
-      'filters.keyword': 'Mot-clé', 'filters.keywordPh': 'Rechercher...',
-      'filters.brand': 'Marque', 'filters.model': 'Modèle',
+      'hero.h1a': 'Trouvez Votre', 'hero.h1b': 'Vehicule Ideal',
+      'hero.subtitle': 'Parcourez nos vehicules premium et reservez en quelques clics. Prix transparents, zero frais caches.',
+      'filters.title': 'Filtrer les vehicules',
+      'filters.keyword': 'Mot-cle', 'filters.keywordPh': 'Rechercher...',
+      'filters.brand': 'Marque', 'filters.model': 'Modele',
       'filters.minPrice': 'Prix min.', 'filters.maxPrice': 'Prix max.',
-      'filters.apply': 'Appliquer', 'filters.reset': 'Réinitialiser',
-      'cars.sectionTitle': 'Véhicules disponibles', 'cars.countLabel': 'voitures',
-      'cars.perDay': 'par jour', 'cars.viewDetails': 'Voir les détails ->',
+      'filters.apply': 'Appliquer', 'filters.reset': 'Reinitialiser',
+      'cars.sectionTitle': 'Vehicules disponibles', 'cars.countLabel': 'voitures',
+      'cars.perDay': 'par jour', 'cars.viewDetails': 'Voir les details ->',
       'specs.seats': 'places',
     }
   };
@@ -216,7 +209,9 @@ export class CarsListComponent implements OnInit {
   t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
 
   constructor(private readonly carsService: CarsService) {}
+
   ngOnInit(): void { this.load(); }
+
   load(): void {
     this.carsService.list(this.filters.getRawValue() as Record<string, string>).subscribe(cars => this.cars = cars);
   }
