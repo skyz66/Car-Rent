@@ -33,7 +33,7 @@ final class AuthController
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$data['email']]);
         if ($stmt->fetch()) {
@@ -81,7 +81,7 @@ final class AuthController
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT id, role, first_name, last_name, email, password_hash FROM users WHERE email = ?');
         $stmt->execute([$data['email']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -117,7 +117,7 @@ final class AuthController
             Response::json(false, null, 'UNAUTHORIZED', 'Unauthorized', 401);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT password_hash FROM users WHERE id = ?');
         $stmt->execute([$user['id']]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -150,7 +150,7 @@ final class AuthController
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
         }
 
-        $clientId = Config::get('GOOGLE_CLIENT_ID');
+        $clientId = Config::getInstance()->get('GOOGLE_CLIENT_ID');
         if (!$clientId) {
             Response::json(false, null, 'CONFIG_ERROR', 'Google client ID not configured', 500);
         }
@@ -191,7 +191,7 @@ final class AuthController
             $lastName = $parts[1] ?? '';
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT id, role, first_name, last_name, email FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);

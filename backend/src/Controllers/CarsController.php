@@ -12,7 +12,7 @@ final class CarsController
 {
     public static function index(): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $filters = [
             'search' => Request::query('search'),
             'brand' => Request::query('brand'),
@@ -93,7 +93,7 @@ final class CarsController
 
     public static function show(string $id): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare(
             "SELECT c.*, ci.image_url AS main_image
              FROM cars c
@@ -137,7 +137,7 @@ final class CarsController
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('INSERT INTO cars (plate_number, brand, model, year, category, gearbox, fuel, seats, daily_price, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt->execute([
@@ -184,7 +184,7 @@ final class CarsController
         if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
         }
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('UPDATE cars SET plate_number=?, brand=?, model=?, year=?, category=?, gearbox=?, fuel=?, seats=?, daily_price=?, status=? WHERE id=?');
         $stmt->execute([
             $data['plate_number'],
@@ -205,7 +205,7 @@ final class CarsController
 
     public static function delete(string $id): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('DELETE FROM cars WHERE id = ?');
         $stmt->execute([$id]);
         Response::json(true, ['deleted' => true]);
@@ -219,7 +219,7 @@ final class CarsController
             Response::json(false, null, 'VALIDATION_ERROR', 'Start and end are required', 422);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare(
             "SELECT COUNT(*) as count
              FROM rentals

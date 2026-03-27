@@ -24,7 +24,7 @@ final class ReclamationsController
             Response::json(false, null, 'UNAUTHORIZED', 'Authentication required', 401);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
 
         if (!empty($data['rental_id'])) {
             $stmt = $pdo->prepare('SELECT id FROM rentals WHERE id = ? AND user_id = ?');
@@ -64,7 +64,7 @@ final class ReclamationsController
             Response::json(false, null, 'UNAUTHORIZED', 'Authentication required', 401);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare(
             "SELECT r.*, c.brand, c.model
              FROM reclamations r
@@ -79,7 +79,7 @@ final class ReclamationsController
 
     public static function all(): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->query(
             "SELECT r.*, u.first_name, u.last_name, u.email, c.brand, c.model
              FROM reclamations r
@@ -102,7 +102,7 @@ final class ReclamationsController
 
         $resolvedAt = in_array($status, ['resolved', 'rejected'], true) ? date('Y-m-d H:i:s') : null;
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('UPDATE reclamations SET status = ?, resolved_at = ? WHERE id = ?');
         $stmt->execute([$status, $resolvedAt, $id]);
         Response::json(true, ['updated' => true]);

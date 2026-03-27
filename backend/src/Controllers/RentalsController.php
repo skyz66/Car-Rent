@@ -30,7 +30,7 @@ final class RentalsController
             Response::json(false, null, 'UNAUTHORIZED', 'Authentication required', 401);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
 
         $stmt = $pdo->prepare(
             "SELECT COUNT(*) as count FROM rentals
@@ -88,7 +88,7 @@ final class RentalsController
             Response::json(false, null, 'UNAUTHORIZED', 'Authentication required', 401);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare(
             "SELECT r.*, c.brand, c.model
              FROM rentals r
@@ -103,7 +103,7 @@ final class RentalsController
 
     public static function all(): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->query(
             "SELECT r.*, c.brand, c.model, u.first_name, u.last_name, u.email
              FROM rentals r
@@ -124,7 +124,7 @@ final class RentalsController
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status', 422);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('UPDATE rentals SET status = ? WHERE id = ?');
         $stmt->execute([$status, $id]);
         Response::json(true, ['updated' => true]);
@@ -137,7 +137,7 @@ final class RentalsController
             Response::json(false, null, 'UNAUTHORIZED', 'Authentication required', 401);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT id, status FROM rentals WHERE id = ? AND user_id = ?');
         $stmt->execute([$id, $user['id']]);
         $rental = $stmt->fetch(PDO::FETCH_ASSOC);

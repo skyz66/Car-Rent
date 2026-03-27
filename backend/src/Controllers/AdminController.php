@@ -11,7 +11,7 @@ final class AdminController
 {
     public static function topRented(): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->query(
             "SELECT c.id, c.brand, c.model, COUNT(*) AS rentals_count
              FROM rentals r
@@ -27,7 +27,7 @@ final class AdminController
 
     public static function summary(): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $total = (int) $pdo->query('SELECT COUNT(*) AS total FROM rentals')->fetch(PDO::FETCH_ASSOC)['total'];
         $ongoing = (int) $pdo->query("SELECT COUNT(*) AS total FROM rentals WHERE status = 'ongoing'")->fetch(PDO::FETCH_ASSOC)['total'];
         $revenue = (float) $pdo->query("SELECT COALESCE(SUM(total_price), 0) AS revenue FROM rentals WHERE status IN ('confirmed','ongoing','completed')")->fetch(PDO::FETCH_ASSOC)['revenue'];
@@ -41,7 +41,7 @@ final class AdminController
 
     public static function rentalsByDay(): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare(
             "SELECT DATE(start_date) AS day, COUNT(*) AS count
              FROM rentals
@@ -72,7 +72,7 @@ final class AdminController
 
     public static function users(): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->query('SELECT id, role, first_name, last_name, email, phone FROM users ORDER BY id DESC');
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         Response::json(true, $rows);
@@ -95,7 +95,7 @@ final class AdminController
             Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters and contain at least one letter and one number', 422);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$data['email']]);
         if ($stmt->fetch()) {
@@ -133,7 +133,7 @@ final class AdminController
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ? AND id <> ?');
         $stmt->execute([$data['email'], $id]);
         if ($stmt->fetch()) {
@@ -164,7 +164,7 @@ final class AdminController
 
     public static function deleteUser(string $id): void
     {
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
         $stmt->execute([$id]);
         Response::json(true, ['deleted' => true]);

@@ -24,7 +24,7 @@ final class AuthMiddleware
             Response::json(false, null, 'UNAUTHORIZED', 'Invalid or expired token', 401);
         }
 
-        $pdo = Database::connect();
+        $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('SELECT id, role, first_name, last_name, email FROM users WHERE id = ?');
         $stmt->execute([$payload['sub']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);

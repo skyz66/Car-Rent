@@ -15,7 +15,6 @@ import { Car } from '../models/types';
       grid-template-columns: repeat(4, 1fr);
       gap: 12px;
     }
-    .span-full { grid-column: 1 / -1; }
     .field { display: flex; flex-direction: column; gap: 5px; }
     .field label {
       font-size: 0.72rem;
@@ -24,7 +23,8 @@ import { Car } from '../models/types';
       letter-spacing: 0.06em;
       color: var(--ink-3);
     }
-    .field input {
+    .field input,
+    .field select {
       height: 42px;
       border-radius: 10px;
       border: 1.5px solid rgba(10,14,26,0.12);
@@ -38,10 +38,30 @@ import { Car } from '../models/types';
       width: 100%;
       box-sizing: border-box;
     }
-    .field input:focus {
+    .field input:focus,
+    .field select:focus {
       border-color: var(--blue);
       background: #fff;
       box-shadow: 0 0 0 3px rgba(23,87,240,0.08);
+    }
+    .field input.invalid,
+    .field select.invalid {
+      border-color: rgba(239,68,68,0.55);
+      background: rgba(239,68,68,0.03);
+    }
+    .error-text {
+      font-size: 0.76rem;
+      color: #b91c1c;
+      line-height: 1.35;
+    }
+    .form-error {
+      margin-top: 1rem;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.14);
+      color: #b91c1c;
+      font-size: 0.82rem;
     }
     .form-actions { display: flex; gap: 8px; align-items: center; }
     .btn-submit {
@@ -82,7 +102,6 @@ import { Car } from '../models/types';
         <span class="count-badge">{{ cars.length }} cars</span>
       </div>
 
-      <!-- Add / Edit form -->
       <mat-card style="margin-bottom:1.5rem">
         <mat-card-content style="padding:1.5rem">
           <h3 style="font-family:var(--font-head);font-weight:700;margin:0 0 1.25rem">
@@ -90,29 +109,78 @@ import { Car } from '../models/types';
           </h3>
           <form [formGroup]="form" (ngSubmit)="submit()">
             <div class="form-grid">
-              <div class="field"><label>Plate Number</label><input type="text" formControlName="plate_number" placeholder="123 TU 4567" /></div>
-              <div class="field"><label>Brand</label><input type="text" formControlName="brand" placeholder="Toyota" /></div>
-              <div class="field"><label>Model</label><input type="text" formControlName="model" placeholder="Corolla" /></div>
-              <div class="field"><label>Year</label><input type="number" formControlName="year" placeholder="2023" /></div>
-              <div class="field"><label>Status</label><input type="text" formControlName="status" placeholder="available" /></div>
-              <div class="field"><label>Category</label><input type="text" formControlName="category" placeholder="economy, suv…" /></div>
-              <div class="field"><label>Daily Price (DT)</label><input type="number" formControlName="daily_price" placeholder="85" /></div>
-              <div class="field"><label>Gearbox</label><input type="text" formControlName="gearbox" placeholder="manual / automatic" /></div>
-              <div class="field"><label>Fuel</label><input type="text" formControlName="fuel" placeholder="petrol, diesel, hybrid…" /></div>
-              <div class="field"><label>Seats</label><input type="number" formControlName="seats" placeholder="5" /></div>
+              <div class="field">
+                <label>Plate Number</label>
+                <input type="text" formControlName="plate_number" placeholder="123 TU 4567" [class.invalid]="isInvalid('plate_number')" />
+                <span class="error-text" *ngIf="isInvalid('plate_number')">Use Tunisian format like 123 TU 4567.</span>
+              </div>
+              <div class="field">
+                <label>Brand</label>
+                <input type="text" formControlName="brand" placeholder="Toyota" [class.invalid]="isInvalid('brand')" />
+                <span class="error-text" *ngIf="isInvalid('brand')">Brand is required.</span>
+              </div>
+              <div class="field">
+                <label>Model</label>
+                <input type="text" formControlName="model" placeholder="Corolla" [class.invalid]="isInvalid('model')" />
+                <span class="error-text" *ngIf="isInvalid('model')">Model is required.</span>
+              </div>
+              <div class="field">
+                <label>Year</label>
+                <input type="number" formControlName="year" placeholder="2023" [class.invalid]="isInvalid('year')" />
+                <span class="error-text" *ngIf="isInvalid('year')">Enter a valid year between 1900 and 2199.</span>
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select formControlName="status" [class.invalid]="isInvalid('status')">
+                  <option value="available">available</option>
+                  <option value="maintenance">maintenance</option>
+                  <option value="unavailable">unavailable</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Category</label>
+                <input type="text" formControlName="category" placeholder="economy, suv..." />
+              </div>
+              <div class="field">
+                <label>Daily Price (DT)</label>
+                <input type="number" step="0.01" formControlName="daily_price" placeholder="85" [class.invalid]="isInvalid('daily_price')" />
+                <span class="error-text" *ngIf="isInvalid('daily_price')">Use a positive number with up to 2 decimals.</span>
+              </div>
+              <div class="field">
+                <label>Gearbox</label>
+                <select formControlName="gearbox" [class.invalid]="isInvalid('gearbox')">
+                  <option value="manual">manual</option>
+                  <option value="automatic">automatic</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Fuel</label>
+                <select formControlName="fuel" [class.invalid]="isInvalid('fuel')">
+                  <option value="petrol">petrol</option>
+                  <option value="diesel">diesel</option>
+                  <option value="hybrid">hybrid</option>
+                  <option value="electric">electric</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Seats</label>
+                <input type="number" formControlName="seats" placeholder="5" [class.invalid]="isInvalid('seats')" />
+                <span class="error-text" *ngIf="isInvalid('seats')">Seats must be a positive integer.</span>
+              </div>
             </div>
             <div class="form-actions" style="margin-top:1rem">
               <button type="submit" class="btn-submit">{{ editingCarId ? 'Update Car' : 'Add Car' }}</button>
               <button type="button" class="btn-cancel" *ngIf="editingCarId" (click)="cancelEdit()">Cancel</button>
             </div>
+            <div class="form-error" *ngIf="submitError">{{ submitError }}</div>
           </form>
         </mat-card-content>
       </mat-card>
 
-      <!-- Cars grid -->
       <div class="grid grid-2">
         <mat-card *ngFor="let car of cars" class="car-item">
-          <div class="car-img-placeholder">🚗</div>
+          <div class="car-img-placeholder" *ngIf="!car.main_image">No Image</div>
+          <img *ngIf="car.main_image" [src]="car.main_image" [alt]="car.brand + ' ' + car.model" class="car-img-placeholder" style="object-fit:cover;width:100%;display:block" />
           <mat-card-content style="padding:1.1rem 1.1rem 0.5rem">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
               <h3 style="font-family:var(--font-head);font-weight:700;margin:0;font-size:1rem">{{ car.brand }} {{ car.model }}</h3>
@@ -141,6 +209,7 @@ import { Car } from '../models/types';
 export class AdminCarsComponent implements OnInit {
   cars: Car[] = [];
   editingCarId: number | null = null;
+  submitError = '';
   private readonly fb = inject(FormBuilder);
 
   private readonly defaultFormValues = {
@@ -150,12 +219,16 @@ export class AdminCarsComponent implements OnInit {
   };
 
   readonly form = this.fb.group({
-    plate_number: ['', Validators.required],
-    brand: ['', Validators.required], model: ['', Validators.required],
-    year: ['', Validators.required], status: ['available', Validators.required],
-    category: [''], daily_price: ['', Validators.required],
-    gearbox: ['manual', Validators.required], fuel: ['petrol', Validators.required],
-    seats: [5, Validators.required]
+    plate_number: ['', [Validators.required, Validators.pattern(/^\d{1,3}\s?TU\s?\d{1,4}$/)]],
+    brand: ['', [Validators.required, Validators.maxLength(100)]],
+    model: ['', [Validators.required, Validators.maxLength(100)]],
+    year: ['', [Validators.required, Validators.min(1900), Validators.max(2199), Validators.pattern(/^\d{4}$/)]],
+    status: ['available', Validators.required],
+    category: [''],
+    daily_price: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
+    gearbox: ['manual', Validators.required],
+    fuel: ['petrol', Validators.required],
+    seats: [5, [Validators.required, Validators.min(1), Validators.pattern(/^[1-9]\d*$/)]]
   });
 
   constructor(
@@ -166,22 +239,41 @@ export class AdminCarsComponent implements OnInit {
   ngOnInit(): void { this.loadCars(); }
 
   submit(): void {
-    if (this.form.invalid) return;
-    const payload = this.form.getRawValue() as Record<string, unknown>;
-    if (this.editingCarId !== null) {
-      this.adminService.updateCar(this.editingCarId, payload).subscribe(() => { this.resetForm(); this.loadCars(); });
+    this.submitError = '';
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
-    this.adminService.createCar(payload).subscribe(() => { this.resetForm(); this.loadCars(); });
+
+    const payload = this.form.getRawValue() as Record<string, unknown>;
+    if (this.editingCarId !== null) {
+      this.adminService.updateCar(this.editingCarId, payload).subscribe({
+        next: () => { this.resetForm(); this.loadCars(); },
+        error: err => this.submitError = err?.error?.error?.message ?? 'Failed to update car.'
+      });
+      return;
+    }
+
+    this.adminService.createCar(payload).subscribe({
+      next: () => { this.resetForm(); this.loadCars(); },
+      error: err => this.submitError = err?.error?.error?.message ?? 'Failed to add car.'
+    });
   }
 
   startEdit(car: Car): void {
+    this.submitError = '';
     this.editingCarId = car.id;
     this.form.patchValue({
-      plate_number: car.plate_number, brand: car.brand, model: car.model,
-      year: car.year as unknown as string, status: car.status,
-      category: car.category ?? '', daily_price: car.daily_price as unknown as string,
-      gearbox: car.gearbox, fuel: car.fuel, seats: car.seats
+      plate_number: car.plate_number,
+      brand: car.brand,
+      model: car.model,
+      year: car.year as unknown as string,
+      status: car.status,
+      category: car.category ?? '',
+      daily_price: car.daily_price as unknown as string,
+      gearbox: car.gearbox,
+      fuel: car.fuel,
+      seats: car.seats
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -198,6 +290,16 @@ export class AdminCarsComponent implements OnInit {
     });
   }
 
+  isInvalid(controlName: keyof typeof this.form.controls): boolean {
+    const control = this.form.get(controlName);
+    return !!control && control.invalid && (control.touched || control.dirty);
+  }
+
   private loadCars(): void { this.carsService.list({}).subscribe(cars => this.cars = cars); }
-  private resetForm(): void { this.editingCarId = null; this.form.reset(this.defaultFormValues); }
+
+  private resetForm(): void {
+    this.editingCarId = null;
+    this.submitError = '';
+    this.form.reset(this.defaultFormValues);
+  }
 }

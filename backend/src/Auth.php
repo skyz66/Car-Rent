@@ -9,12 +9,13 @@ final class Auth
 {
     public static function generateToken(array $user): string
     {
-        $secret = Config::get('JWT_SECRET', 'change_this_secret');
-        $ttl = (int) (Config::get('JWT_TTL', '86400'));
+        $config = Config::getInstance();
+        $secret = $config->get('JWT_SECRET', 'change_this_secret');
+        $ttl = (int) ($config->get('JWT_TTL', '86400'));
         $now = time();
 
         $payload = [
-            'iss' => Config::get('APP_URL', 'http://localhost:8000'),
+            'iss' => $config->get('APP_URL', 'http://localhost:8000'),
             'iat' => $now,
             'exp' => $now + $ttl,
             'sub' => $user['id'],
@@ -27,7 +28,7 @@ final class Auth
 
     public static function decodeToken(string $token): ?array
     {
-        $secret = Config::get('JWT_SECRET', 'change_this_secret');
+        $secret = Config::getInstance()->get('JWT_SECRET', 'change_this_secret');
         try {
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
             return (array) $decoded;
