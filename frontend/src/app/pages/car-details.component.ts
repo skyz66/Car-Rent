@@ -130,6 +130,9 @@ export class CarDetailsComponent implements OnInit {
   check(): void {
     if (!this.car || this.form.invalid) return;
     const { start_date, end_date } = this.form.getRawValue();
+    if (!this.validateDateRange(start_date, end_date)) {
+      return;
+    }
     this.carsService.checkAvailability(this.car.id, start_date!, end_date!).subscribe({
       next: res => this.availabilityMessage = res.available ? 'Car is available for selected dates.' : 'Car is not available for selected dates.',
       error: err => this.availabilityMessage = err?.error?.error?.message ?? 'Failed'
@@ -139,9 +142,39 @@ export class CarDetailsComponent implements OnInit {
   book(): void {
     if (!this.car || this.form.invalid) return;
     const { start_date, end_date } = this.form.getRawValue();
+    if (!this.validateDateRange(start_date, end_date)) {
+      return;
+    }
     this.rentalsService.create({ car_id: this.car.id, start_date: start_date!, end_date: end_date! }).subscribe({
       next: () => this.bookingMessage = 'Booking created with pending status.',
       error: err => this.bookingMessage = err?.error?.error?.message ?? 'Booking failed'
     });
+  }
+
+  private validateDateRange(startDate: string | null, endDate: string | null): boolean {
+    this.availabilityMessage = '';
+    this.bookingMessage = '';
+
+    if (!startDate || !endDate) {
+      this.availabilityMessage = 'Start and end date are required.';
+      this.bookingMessage = 'Start and end date are required.';
+      return false;
+    }
+
+    const startTs = Date.parse(startDate);
+    const endTs = Date.parse(endDate);
+    if (Number.isNaN(startTs) || Number.isNaN(endTs)) {
+      this.availabilityMessage = 'Invalid date format.';
+      this.bookingMessage = 'Invalid date format.';
+      return false;
+    }
+
+    if (endTs <= startTs) {
+      this.availabilityMessage = 'End date must be after start date.';
+      this.bookingMessage = 'End date must be after start date.';
+      return false;
+    }
+
+    return true;
   }
 }

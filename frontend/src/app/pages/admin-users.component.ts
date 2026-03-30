@@ -70,6 +70,15 @@ import { AdminService } from '../services/admin.service';
       font-weight: 600; cursor: pointer; transition: all 0.18s;
     }
     .btn-delete:hover { background: rgba(239,68,68,0.06); }
+    .form-error {
+      margin-top: 1rem;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.14);
+      color: #b91c1c;
+      font-size: 0.82rem;
+    }
     .table {
       display: grid;
       gap: 10px;
@@ -141,6 +150,7 @@ import { AdminService } from '../services/admin.service';
               <button type="submit" class="btn-submit">{{ editingUserId ? 'Update User' : 'Add User' }}</button>
               <button type="button" class="btn-cancel" *ngIf="editingUserId" (click)="cancelEdit()">Cancel</button>
             </div>
+            <div class="form-error" *ngIf="submitError">{{ submitError }}</div>
           </form>
         </mat-card-content>
       </mat-card>
@@ -170,19 +180,22 @@ import { AdminService } from '../services/admin.service';
 export class AdminUsersComponent implements OnInit {
   users: any[] = [];
   editingUserId: number | null = null;
+  submitError = '';
   private readonly fb = inject(FormBuilder);
+  private readonly phonePattern = /^\+?[0-9 ]{8,15}$/;
+  private readonly passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 
   private readonly defaultFormValues = {
     first_name: '', last_name: '', email: '', phone: '', role: 'customer', password: ''
   };
 
   readonly form = this.fb.group({
-    first_name: ['', Validators.required],
-    last_name: ['', Validators.required],
+    first_name: ['', [Validators.required, Validators.maxLength(100)]],
+    last_name: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: [''],
-    role: ['customer', Validators.required],
-    password: ['', Validators.minLength(6)],
+    phone: ['', Validators.pattern(this.phonePattern)],
+    role: ['customer', [Validators.required, Validators.pattern(/^(customer|admin)$/)]],
+    password: ['', Validators.pattern(this.passwordPattern)],
   });
 
   constructor(private readonly adminService: AdminService) {}
@@ -190,22 +203,42 @@ export class AdminUsersComponent implements OnInit {
   ngOnInit(): void { this.loadUsers(); }
 
   submit(): void {
-    if (this.form.invalid) return;
+    this.submitError = '';
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.submitError = 'Please fix validation errors before submitting.';
+      return;
+    }
+
     const payload = this.form.getRawValue() as Record<string, unknown>;
+    const password = String(payload['password'] ?? '').trim();
+    if (this.editingUserId === null && password === '') {
+      this.submitError = 'Password is required when creating a user.';
+      return;
+    }
+
     if (this.editingUserId !== null) {
-      this.adminService.updateUser(this.editingUserId, payload).subscribe(() => {
-        this.resetForm();
-        this.loadUsers();
+      this.adminService.updateUser(this.editingUserId, payload).subscribe({
+        next: () => {
+          this.resetForm();
+          this.loadUsers();
+        },
+        error: err => this.submitError = err?.error?.error?.message ?? 'Failed to update user.'
       });
       return;
     }
-    this.adminService.createUser(payload).subscribe(() => {
-      this.resetForm();
-      this.loadUsers();
+
+    this.adminService.createUser(payload).subscribe({
+      next: () => {
+        this.resetForm();
+        this.loadUsers();
+      },
+      error: err => this.submitError = err?.error?.error?.message ?? 'Failed to add user.'
     });
   }
 
   startEdit(user: any): void {
+    this.submitError = '';
     this.editingUserId = user.id;
     this.form.patchValue({
       first_name: user.first_name,
@@ -231,5 +264,5 @@ export class AdminUsersComponent implements OnInit {
   }
 
   private loadUsers(): void { this.adminService.users().subscribe(rows => this.users = rows); }
-  private resetForm(): void { this.editingUserId = null; this.form.reset(this.defaultFormValues); }
+  private resetForm(): void { this.editingUserId = null; this.submitError = ''; this.form.reset(this.defaultFormValues); }
 }

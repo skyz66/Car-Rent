@@ -136,6 +136,10 @@ final class CarsController
         if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
         }
+        $imageUrl = trim((string) ($data['image_url'] ?? ''));
+        if ($imageUrl !== '' && !Validator::isUrl($imageUrl)) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid image URL', 422);
+        }
 
         $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('INSERT INTO cars (plate_number, brand, model, year, category, gearbox, fuel, seats, daily_price, status)
@@ -153,7 +157,13 @@ final class CarsController
             $data['status'],
         ]);
 
-        Response::json(true, ['id' => (int) $pdo->lastInsertId()]);
+        $carId = (int) $pdo->lastInsertId();
+        if ($imageUrl !== '') {
+            $imgStmt = $pdo->prepare('INSERT INTO car_images (car_id, image_url, is_main) VALUES (?, ?, 1)');
+            $imgStmt->execute([$carId, $imageUrl]);
+        }
+
+        Response::json(true, ['id' => $carId]);
     }
 
     public static function update(string $id): void
@@ -184,6 +194,10 @@ final class CarsController
         if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
         }
+        $imageUrl = trim((string) ($data['image_url'] ?? ''));
+        if ($imageUrl !== '' && !Validator::isUrl($imageUrl)) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid image URL', 422);
+        }
         $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('UPDATE cars SET plate_number=?, brand=?, model=?, year=?, category=?, gearbox=?, fuel=?, seats=?, daily_price=?, status=? WHERE id=?');
         $stmt->execute([
@@ -199,6 +213,25 @@ final class CarsController
             $data['status'],
             $id,
         ]);
+
+        if (array_key_exists('image_url', $data)) {
+            if ($imageUrl === '') {
+                $deleteImage = $pdo->prepare('DELETE FROM car_images WHERE car_id = ? AND is_main = 1');
+                $deleteImage->execute([$id]);
+            } else {
+                $existingImage = $pdo->prepare('SELECT id FROM car_images WHERE car_id = ? AND is_main = 1 LIMIT 1');
+                $existingImage->execute([$id]);
+                $row = $existingImage->fetch(PDO::FETCH_ASSOC);
+
+                if ($row) {
+                    $updateImage = $pdo->prepare('UPDATE car_images SET image_url = ? WHERE id = ?');
+                    $updateImage->execute([$imageUrl, $row['id']]);
+                } else {
+                    $insertImage = $pdo->prepare('INSERT INTO car_images (car_id, image_url, is_main) VALUES (?, ?, 1)');
+                    $insertImage->execute([$id, $imageUrl]);
+                }
+            }
+        }
 
         Response::json(true, ['updated' => true]);
     }

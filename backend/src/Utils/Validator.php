@@ -50,6 +50,14 @@ final class Validator
         return (bool) preg_match('/^\d+(\.\d{1,2})?$/', $value);
     }
 
+    public static function isUrl(string $value): bool
+    {
+        if ($value === '') {
+            return false;
+        }
+        return filter_var($value, FILTER_VALIDATE_URL) !== false;
+    }
+
     public static function inList(string $value, array $allowed): bool
     {
         return in_array($value, $allowed, true);

@@ -46,10 +46,18 @@ final class Config
 
     public function get(string $key, ?string $default = null): ?string
     {
+        $value = null;
         if (array_key_exists($key, $this->settings)) {
-            return $this->settings[$key];
+            $value = $this->settings[$key];
+        } elseif (array_key_exists($key, $_ENV)) {
+            $value = $_ENV[$key];
         }
 
-        return $_ENV[$key] ?? $default;
+        if ($value === null) {
+            return $default;
+        }
+
+        $value = trim((string) $value);
+        return $value !== '' ? $value : $default;
     }
 }

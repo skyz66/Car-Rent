@@ -77,12 +77,14 @@ import { AuthService } from '../services/auth.service';
 })
 export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly phonePattern = /^\+?[0-9 ]{8,15}$/;
+  private readonly passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
   error = '';
   lang: 'en' | 'fr' = 'en';
   readonly form = this.fb.group({
-    first_name: ['', Validators.required], last_name: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]], phone: [''],
-    password: ['', Validators.required],
+    first_name: ['', [Validators.required, Validators.maxLength(100)]], last_name: ['', [Validators.required, Validators.maxLength(100)]],
+    email: ['', [Validators.required, Validators.email]], phone: ['', Validators.pattern(this.phonePattern)],
+    password: ['', [Validators.required, Validators.pattern(this.passwordPattern)]],
     confirm_password: ['', Validators.required]
   });
   private tr: Record<string, Record<string, string>> = {
@@ -104,7 +106,12 @@ export class RegisterComponent {
   t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
   submit(): void {
-    if (this.form.invalid) return;
+    this.error = '';
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error = 'Please enter valid data in all required fields.';
+      return;
+    }
     const { confirm_password, ...payload } = this.form.getRawValue();
     if (payload.password !== confirm_password) {
       this.error = 'Passwords do not match';

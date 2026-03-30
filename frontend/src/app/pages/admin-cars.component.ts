@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { AdminService } from '../services/admin.service';
 import { CarsService } from '../services/cars.service';
 import { Car } from '../models/types';
 
@@ -167,6 +166,11 @@ import { Car } from '../models/types';
                 <input type="number" formControlName="seats" placeholder="5" [class.invalid]="isInvalid('seats')" />
                 <span class="error-text" *ngIf="isInvalid('seats')">Seats must be a positive integer.</span>
               </div>
+              <div class="field">
+                <label>Image URL</label>
+                <input type="url" formControlName="image_url" placeholder="https://example.com/car.jpg" [class.invalid]="isInvalid('image_url')" />
+                <span class="error-text" *ngIf="isInvalid('image_url')">Enter a valid URL (http:// or https://).</span>
+              </div>
             </div>
             <div class="form-actions" style="margin-top:1rem">
               <button type="submit" class="btn-submit">{{ editingCarId ? 'Update Car' : 'Add Car' }}</button>
@@ -215,7 +219,7 @@ export class AdminCarsComponent implements OnInit {
   private readonly defaultFormValues = {
     plate_number: '', brand: '', model: '', year: '',
     status: 'available', category: '', daily_price: '',
-    gearbox: 'manual', fuel: 'petrol', seats: 5
+    gearbox: 'manual', fuel: 'petrol', seats: 5, image_url: ''
   };
 
   readonly form = this.fb.group({
@@ -224,17 +228,15 @@ export class AdminCarsComponent implements OnInit {
     model: ['', [Validators.required, Validators.maxLength(100)]],
     year: ['', [Validators.required, Validators.min(1900), Validators.max(2199), Validators.pattern(/^\d{4}$/)]],
     status: ['available', Validators.required],
-    category: [''],
+    category: ['', Validators.maxLength(100)],
     daily_price: ['', [Validators.required, Validators.pattern(/^\d+(\.\d{1,2})?$/)]],
     gearbox: ['manual', Validators.required],
     fuel: ['petrol', Validators.required],
-    seats: [5, [Validators.required, Validators.min(1), Validators.pattern(/^[1-9]\d*$/)]]
+    seats: [5, [Validators.required, Validators.min(1), Validators.pattern(/^[1-9]\d*$/)]],
+    image_url: ['', Validators.pattern(/^https?:\/\/.+/i)]
   });
 
-  constructor(
-    private readonly adminService: AdminService,
-    private readonly carsService: CarsService
-  ) {}
+  constructor(private readonly carsService: CarsService) {}
 
   ngOnInit(): void { this.loadCars(); }
 
@@ -247,14 +249,14 @@ export class AdminCarsComponent implements OnInit {
 
     const payload = this.form.getRawValue() as Record<string, unknown>;
     if (this.editingCarId !== null) {
-      this.adminService.updateCar(this.editingCarId, payload).subscribe({
+      this.carsService.update(this.editingCarId, payload).subscribe({
         next: () => { this.resetForm(); this.loadCars(); },
         error: err => this.submitError = err?.error?.error?.message ?? 'Failed to update car.'
       });
       return;
     }
 
-    this.adminService.createCar(payload).subscribe({
+    this.carsService.create(payload).subscribe({
       next: () => { this.resetForm(); this.loadCars(); },
       error: err => this.submitError = err?.error?.error?.message ?? 'Failed to add car.'
     });
@@ -273,7 +275,8 @@ export class AdminCarsComponent implements OnInit {
       daily_price: car.daily_price as unknown as string,
       gearbox: car.gearbox,
       fuel: car.fuel,
-      seats: car.seats
+      seats: car.seats,
+      image_url: car.main_image ?? ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -284,7 +287,7 @@ export class AdminCarsComponent implements OnInit {
     const label = `${car.brand} ${car.model}`.trim();
     if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
     if (!window.confirm(`Final confirmation: permanently delete ${label}?`)) return;
-    this.adminService.deleteCar(car.id).subscribe(() => {
+    this.carsService.delete(car.id).subscribe(() => {
       if (this.editingCarId === car.id) this.resetForm();
       this.loadCars();
     });

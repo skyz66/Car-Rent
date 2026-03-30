@@ -43,7 +43,7 @@ final class AuthController
         $passwordHash = password_hash((string) $data['password'], PASSWORD_BCRYPT);
         $stmt = $pdo->prepare(
             'INSERT INTO users (role, first_name, last_name, email, phone, password_hash)
-             VALUES (\'customer\', ?, ?, ?, ?, ?, ?, ?, ?)'
+             VALUES (\'customer\', ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['first_name'],

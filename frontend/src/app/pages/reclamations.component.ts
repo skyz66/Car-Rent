@@ -83,7 +83,7 @@ export class ReclamationsComponent implements OnInit {
   lang: 'en' | 'fr' = 'en';
 
   readonly form = this.fb.group({
-    subject: ['', Validators.required],
+    subject: ['', [Validators.required, Validators.maxLength(190)]],
     description: ['', Validators.required]
   });
 
@@ -105,7 +105,11 @@ export class ReclamationsComponent implements OnInit {
   ngOnInit(): void { this.reclamationsService.list().subscribe(r => this.reclamations = r); }
 
   submit(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.errorMsg = 'Please fill all required fields correctly.';
+      return;
+    }
     this.reclamationsService.create(this.form.getRawValue() as any).subscribe({
       next: () => { this.successMsg = 'Reclamation submitted.'; this.form.reset(); this.ngOnInit(); },
       error: err => this.errorMsg = err?.error?.error?.message ?? 'Failed'

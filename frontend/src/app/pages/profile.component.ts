@@ -65,13 +65,14 @@ import { AuthService } from '../services/auth.service';
 export class ProfileComponent {
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 
   successMessage = '';
   errorMessage = '';
 
   readonly form = this.fb.group({
     current_password: [''],
-    new_password: ['', [Validators.required, Validators.minLength(6)]],
+    new_password: ['', [Validators.required, Validators.pattern(this.passwordPattern)]],
     confirm_password: ['', Validators.required],
   });
 
@@ -83,7 +84,8 @@ export class ProfileComponent {
     this.successMessage = '';
     this.errorMessage = '';
     if (this.form.invalid) {
-      this.errorMessage = 'Please fill out all required fields.';
+      this.form.markAllAsTouched();
+      this.errorMessage = 'Password must be at least 6 characters and include at least one letter and one number.';
       return;
     }
     const { current_password, new_password, confirm_password } = this.form.getRawValue();
