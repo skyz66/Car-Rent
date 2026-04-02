@@ -23,13 +23,18 @@ final class AuthController
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
         }
 
+        $phone = null;
+        if (isset($data['phone']) && trim((string) $data['phone']) !== '') {
+            $phone = (string) preg_replace('/\s+/', '', trim((string) $data['phone']));
+        }
+
         if (!Validator::isEmail((string) $data['email'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
         if (!Validator::isPassword((string) $data['password'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Password must be at least 6 characters and contain at least one letter and one number', 422);
         }
-        if (!empty($data['phone']) && !Validator::isPhone((string) $data['phone'])) {
+        if ($phone !== null && !Validator::isPhone($phone)) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
         }
 
@@ -38,6 +43,14 @@ final class AuthController
         $stmt->execute([$data['email']]);
         if ($stmt->fetch()) {
             Response::json(false, null, 'EMAIL_EXISTS', 'Email already registered', 409);
+        }
+
+        if ($phone !== null) {
+            $stmt = $pdo->prepare('SELECT id FROM users WHERE REPLACE(phone, \' \', \'\') = ?');
+            $stmt->execute([$phone]);
+            if ($stmt->fetch()) {
+                Response::json(false, null, 'PHONE_EXISTS', 'Phone already registered', 409);
+            }
         }
 
         $passwordHash = password_hash((string) $data['password'], PASSWORD_BCRYPT);
@@ -49,7 +62,7 @@ final class AuthController
             $data['first_name'],
             $data['last_name'],
             $data['email'],
-            $data['phone'] ?? null,
+            $phone,
             $passwordHash,
         ]);
 

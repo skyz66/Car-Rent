@@ -182,7 +182,7 @@ export class AdminUsersComponent implements OnInit {
   editingUserId: number | null = null;
   submitError = '';
   private readonly fb = inject(FormBuilder);
-  private readonly phonePattern = /^\+?[0-9 ]{8,15}$/;
+  private readonly phonePattern = /^\d{8}$/;
   private readonly passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 
   private readonly defaultFormValues = {
@@ -204,18 +204,23 @@ export class AdminUsersComponent implements OnInit {
 
   submit(): void {
     this.submitError = '';
+    this.normalizeFormValues();
+
+    const password = String(this.form.controls.password.value ?? '').trim();
+    if (this.editingUserId === null && password === '') {
+      this.form.controls.password.setErrors({ required: true });
+      this.form.controls.password.markAsTouched();
+      this.submitError = 'Password is required when creating a user.';
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.submitError = 'Please fix validation errors before submitting.';
+      this.submitError = this.buildValidationErrorMessage();
       return;
     }
 
     const payload = this.form.getRawValue() as Record<string, unknown>;
-    const password = String(payload['password'] ?? '').trim();
-    if (this.editingUserId === null && password === '') {
-      this.submitError = 'Password is required when creating a user.';
-      return;
-    }
 
     if (this.editingUserId !== null) {
       this.adminService.updateUser(this.editingUserId, payload).subscribe({
@@ -265,4 +270,43 @@ export class AdminUsersComponent implements OnInit {
 
   private loadUsers(): void { this.adminService.users().subscribe(rows => this.users = rows); }
   private resetForm(): void { this.editingUserId = null; this.submitError = ''; this.form.reset(this.defaultFormValues); }
+
+  private normalizeFormValues(): void {
+    const raw = this.form.getRawValue();
+    this.form.patchValue({
+      first_name: String(raw.first_name ?? '').trim(),
+      last_name: String(raw.last_name ?? '').trim(),
+      email: String(raw.email ?? '').trim().toLowerCase(),
+      phone: String(raw.phone ?? '').trim(),
+      role: String(raw.role ?? '').trim(),
+      password: String(raw.password ?? '').trim(),
+    }, { emitEvent: false });
+  }
+
+  private buildValidationErrorMessage(): string {
+    const firstName = this.form.controls.first_name;
+    if (firstName.errors?.['required']) return 'First name is required.';
+    if (firstName.errors?.['maxlength']) return 'First name is too long.';
+
+    const lastName = this.form.controls.last_name;
+    if (lastName.errors?.['required']) return 'Last name is required.';
+    if (lastName.errors?.['maxlength']) return 'Last name is too long.';
+
+    const email = this.form.controls.email;
+    if (email.errors?.['required']) return 'Email is required.';
+    if (email.errors?.['email']) return 'Email format is invalid.';
+
+    const phone = this.form.controls.phone;
+    if (phone.errors?.['pattern']) return 'Phone must contain exactly 8 digits.';
+
+    const role = this.form.controls.role;
+    if (role.errors?.['required']) return 'Role is required.';
+    if (role.errors?.['pattern']) return 'Role must be either customer or admin.';
+
+    const password = this.form.controls.password;
+    if (password.errors?.['required']) return 'Password is required when creating a user.';
+    if (password.errors?.['pattern']) return 'Password must be at least 6 characters with at least one letter and one number.';
+
+    return 'Please fix validation errors before submitting.';
+  }
 }

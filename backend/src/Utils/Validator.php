@@ -22,7 +22,7 @@ final class Validator
 
     public static function isPhone(string $value): bool
     {
-        return (bool) preg_match('/^\+?[0-9 ]{8,15}$/', $value);
+        return (bool) preg_match('/^\d{8}$/', $value);
     }
 
     public static function isPlateNumber(string $value): bool

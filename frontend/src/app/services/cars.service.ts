@@ -24,10 +24,10 @@ export class CarsService {
     return this.http.get<ApiResponse<Car>>(`${environment.apiUrl}/cars/${id}`).pipe(map((res) => res.data));
   }
 
-  checkAvailability(id: number, start: string, end: string): Observable<{ available: boolean }> {
+  checkAvailability(id: number, start: string, end: string): Observable<{ available: boolean; reason?: string }> {
     const params = new HttpParams().set('start', start).set('end', end);
     return this.http
-      .get<ApiResponse<{ available: boolean }>>(`${environment.apiUrl}/cars/${id}/availability`, { params })
+      .get<ApiResponse<{ available: boolean; reason?: string }>>(`${environment.apiUrl}/cars/${id}/availability`, { params })
       .pipe(map((res) => res.data));
   }
 

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { AdminService } from '../services/admin.service';
+import { ReclamationsService } from '../services/reclamations.service';
 
 @Component({
   standalone: true,
@@ -35,8 +35,8 @@ import { AdminService } from '../services/admin.service';
 })
 export class AdminReclamationsComponent implements OnInit {
   reclamations: any[] = [];
-  constructor(private readonly adminService: AdminService) {}
-  ngOnInit(): void { this.adminService.reclamations().subscribe(r => this.reclamations = r); }
-  resolve(id: number): void { this.adminService.resolveReclamation(id).subscribe(() => this.ngOnInit()); }
+  constructor(private readonly reclamationsService: ReclamationsService) {}
+  ngOnInit(): void { this.reclamationsService.all().subscribe(r => this.reclamations = r); }
+  resolve(id: number): void { this.reclamationsService.updateStatus(id, 'resolved').subscribe(() => this.ngOnInit()); }
 }
 

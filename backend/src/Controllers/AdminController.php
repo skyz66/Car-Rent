@@ -16,7 +16,7 @@ final class AdminController
             "SELECT c.id, c.brand, c.model, COUNT(*) AS rentals_count
              FROM rentals r
              JOIN cars c ON c.id = r.car_id
-             WHERE r.status <> 'cancelled'
+             WHERE r.status = 'completed'
              GROUP BY c.id, c.brand, c.model
              ORDER BY rentals_count DESC
              LIMIT 10"
@@ -28,7 +28,7 @@ final class AdminController
     public static function summary(): void
     {
         $pdo = Database::getInstance()->connect();
-        $total = (int) $pdo->query('SELECT COUNT(*) AS total FROM rentals')->fetch(PDO::FETCH_ASSOC)['total'];
+        $total = (int) $pdo->query("SELECT COUNT(*) AS total FROM rentals WHERE status = 'completed'")->fetch(PDO::FETCH_ASSOC)['total'];
         $ongoing = (int) $pdo->query("SELECT COUNT(*) AS total FROM rentals WHERE status = 'ongoing'")->fetch(PDO::FETCH_ASSOC)['total'];
         $revenue = (float) $pdo->query("SELECT COALESCE(SUM(total_price), 0) AS revenue FROM rentals WHERE status IN ('confirmed','ongoing','completed')")->fetch(PDO::FETCH_ASSOC)['revenue'];
 
@@ -85,10 +85,16 @@ final class AdminController
         if ($missing) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
         }
+
+        $phone = null;
+        if (isset($data['phone']) && trim((string) $data['phone']) !== '') {
+            $phone = (string) preg_replace('/\s+/', '', trim((string) $data['phone']));
+        }
+
         if (!\App\Utils\Validator::isEmail((string) $data['email'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
-        if (!empty($data['phone']) && !\App\Utils\Validator::isPhone((string) $data['phone'])) {
+        if ($phone !== null && !\App\Utils\Validator::isPhone($phone)) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
         }
         if (!\App\Utils\Validator::isPassword((string) $data['password'])) {
@@ -102,6 +108,14 @@ final class AdminController
             Response::json(false, null, 'EMAIL_EXISTS', 'Email already registered', 409);
         }
 
+        if ($phone !== null) {
+            $stmt = $pdo->prepare('SELECT id FROM users WHERE REPLACE(phone, \' \', \'\') = ?');
+            $stmt->execute([$phone]);
+            if ($stmt->fetch()) {
+                Response::json(false, null, 'PHONE_EXISTS', 'Phone already registered', 409);
+            }
+        }
+
         $passwordHash = password_hash((string) $data['password'], PASSWORD_BCRYPT);
         $stmt = $pdo->prepare(
             'INSERT INTO users (role, first_name, last_name, email, phone, password_hash)
@@ -112,7 +126,7 @@ final class AdminController
             $data['first_name'],
             $data['last_name'],
             $data['email'],
-            $data['phone'] ?? null,
+            $phone,
             $passwordHash,
         ]);
 
@@ -126,10 +140,16 @@ final class AdminController
         if ($missing) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
         }
+
+        $phone = null;
+        if (isset($data['phone']) && trim((string) $data['phone']) !== '') {
+            $phone = (string) preg_replace('/\s+/', '', trim((string) $data['phone']));
+        }
+
         if (!\App\Utils\Validator::isEmail((string) $data['email'])) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid email format', 422);
         }
-        if (!empty($data['phone']) && !\App\Utils\Validator::isPhone((string) $data['phone'])) {
+        if ($phone !== null && !\App\Utils\Validator::isPhone($phone)) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid phone format', 422);
         }
 
@@ -140,13 +160,21 @@ final class AdminController
             Response::json(false, null, 'EMAIL_EXISTS', 'Email already registered', 409);
         }
 
+        if ($phone !== null) {
+            $stmt = $pdo->prepare('SELECT id FROM users WHERE REPLACE(phone, \' \', \'\') = ? AND id <> ?');
+            $stmt->execute([$phone, $id]);
+            if ($stmt->fetch()) {
+                Response::json(false, null, 'PHONE_EXISTS', 'Phone already registered', 409);
+            }
+        }
+
         $stmt = $pdo->prepare('UPDATE users SET role=?, first_name=?, last_name=?, email=?, phone=? WHERE id=?');
         $stmt->execute([
             $data['role'],
             $data['first_name'],
             $data['last_name'],
             $data['email'],
-            $data['phone'] ?? null,
+            $phone,
             $id,
         ]);
 

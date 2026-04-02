@@ -8,26 +8,6 @@ import { ApiResponse } from '../models/types';
 export class AdminService {
   constructor(private readonly http: HttpClient) {}
 
-  rentals(): Observable<any[]> {
-    return this.http.get<ApiResponse<any[]>>(`${environment.apiUrl}/rentals`).pipe(map((r) => r.data));
-  }
-
-  confirmRental(id: number): Observable<unknown> {
-    return this.http
-      .patch<ApiResponse<unknown>>(`${environment.apiUrl}/rentals/${id}/status`, { status: 'confirmed' })
-      .pipe(map((r) => r.data));
-  }
-
-  reclamations(): Observable<any[]> {
-    return this.http.get<ApiResponse<any[]>>(`${environment.apiUrl}/reclamations`).pipe(map((r) => r.data));
-  }
-
-  resolveReclamation(id: number): Observable<unknown> {
-    return this.http
-      .patch<ApiResponse<unknown>>(`${environment.apiUrl}/reclamations/${id}/status`, { status: 'resolved' })
-      .pipe(map((r) => r.data));
-  }
-
   topRented(): Observable<any[]> {
     return this.http
       .get<ApiResponse<any[]>>(`${environment.apiUrl}/admin/dashboard/top-rented`)

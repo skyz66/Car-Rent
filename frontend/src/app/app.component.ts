@@ -21,11 +21,6 @@ import { AuthService } from './services/auth.service';
           <a mat-button class="nav-link-btn" routerLink="/profile" routerLinkActive="menu-active" *ngIf="auth.isAuthenticated()">{{ t('nav.profile') }}</a>
           <a mat-button class="nav-link-btn" routerLink="/admin/dashboard" routerLinkActive="menu-active" *ngIf="auth.isAdmin()">{{ t('nav.admin') }}</a>
 
-          <div class="lang-toggle">
-            <button class="lang-btn" [class.active]="lang === 'en'" (click)="setLang('en')">EN</button>
-            <button class="lang-btn" [class.active]="lang === 'fr'" (click)="setLang('fr')">FR</button>
-          </div>
-
           <a mat-button class="nav-link-btn login-btn" routerLink="/login" routerLinkActive="menu-active" *ngIf="!auth.isAuthenticated()">{{ t('nav.login') }}</a>
           <a mat-button class="nav-link-btn" routerLink="/register" routerLinkActive="menu-active" *ngIf="!auth.isAuthenticated()">{{ t('nav.register') }}</a>
           <button mat-stroked-button class="logout-btn" *ngIf="auth.isAuthenticated()" (click)="logout()">{{ t('nav.logout') }}</button>
@@ -39,28 +34,23 @@ export class AppComponent {
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  lang: 'en' | 'fr' = 'en';
-
-  private translations: Record<string, Record<string, string>> = {
-    en: {
-      'nav.cars': 'Cars', 'nav.myRentals': 'My Rentals', 'nav.reclamations': 'Reclamations',
-      'nav.profile': 'Profile', 'nav.admin': 'Admin', 'nav.login': 'Login', 'nav.register': 'Register', 'nav.logout': 'Logout',
-    },
-    fr: {
-      'nav.cars': 'Véhicules', 'nav.myRentals': 'Mes Locations', 'nav.reclamations': 'Réclamations',
-      'nav.profile': 'Profil', 'nav.admin': 'Admin', 'nav.login': 'Connexion', 'nav.register': 'Inscription', 'nav.logout': 'Déconnexion',
-    }
+  private readonly translations: Record<string, string> = {
+    'nav.cars': 'Cars',
+    'nav.myRentals': 'My Rentals',
+    'nav.reclamations': 'Reclamations',
+    'nav.profile': 'Profile',
+    'nav.admin': 'Admin',
+    'nav.login': 'Login',
+    'nav.register': 'Register',
+    'nav.logout': 'Logout',
   };
 
   t(key: string): string {
-    return this.translations[this.lang]?.[key] ?? this.translations['en'][key] ?? key;
+    return this.translations[key] ?? key;
   }
-
-  setLang(l: 'en' | 'fr'): void { this.lang = l; }
 
   logout(): void {
     this.auth.logout();
     this.router.navigateByUrl('/login');
   }
 }
-

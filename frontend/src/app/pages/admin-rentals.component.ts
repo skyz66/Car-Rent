@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { AdminService } from '../services/admin.service';
+import { RentalsService } from '../services/rentals.service';
 
 @Component({
   standalone: true,
@@ -27,7 +27,26 @@ import { AdminService } from '../services/admin.service';
               </div>
               <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
                 <span class="status-chip" [class]="'status-' + r.status">{{ r.status }}</span>
-                <button mat-stroked-button class="!rounded-lg !text-sm" (click)="confirm(r.id)" *ngIf="r.status === 'pending'">Confirm</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                  <button mat-stroked-button class="!rounded-lg !text-sm" (click)="setStatus(r.id, 'confirmed')" *ngIf="r.status === 'pending'">
+                    Confirm
+                  </button>
+                  <button mat-stroked-button class="!rounded-lg !text-sm" (click)="setStatus(r.id, 'ongoing')" *ngIf="r.status === 'confirmed'">
+                    Start
+                  </button>
+                  <button mat-stroked-button class="!rounded-lg !text-sm" (click)="setStatus(r.id, 'completed')" *ngIf="r.status === 'ongoing'">
+                    Complete
+                  </button>
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    class="!rounded-lg !text-sm"
+                    (click)="setStatus(r.id, 'cancelled')"
+                    *ngIf="r.status === 'pending' || r.status === 'confirmed' || r.status === 'ongoing'"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           </mat-card-content>
@@ -38,8 +57,13 @@ import { AdminService } from '../services/admin.service';
 })
 export class AdminRentalsComponent implements OnInit {
   rentals: any[] = [];
-  constructor(private readonly adminService: AdminService) {}
-  ngOnInit(): void { this.adminService.rentals().subscribe(r => this.rentals = r); }
-  confirm(id: number): void { this.adminService.confirmRental(id).subscribe(() => this.ngOnInit()); }
+  constructor(private readonly rentalsService: RentalsService) {}
+  ngOnInit(): void { this.rentalsService.all().subscribe(r => this.rentals = r); }
+  setStatus(id: number, status: 'confirmed' | 'ongoing' | 'completed' | 'cancelled'): void {
+    if (status === 'cancelled' && !window.confirm('Cancel this rental?')) {
+      return;
+    }
+    this.rentalsService.updateStatus(id, status).subscribe(() => this.ngOnInit());
+  }
 }
 

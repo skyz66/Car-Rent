@@ -36,14 +36,15 @@ import { RentalsService } from '../services/rentals.service';
 })
 export class MyRentalsComponent implements OnInit {
   rentals: any[] = [];
-  lang: 'en' | 'fr' = 'en';
 
-  private tr: Record<string, Record<string, string>> = {
-    en: { title: 'My Rentals', total: 'total', noRentals: 'No rentals found.' },
-    fr: { title: 'Mes Locations', total: 'au total', noRentals: 'Aucune location trouvée.' }
+  private readonly tr: Record<string, string> = {
+    title: 'My Rentals',
+    total: 'total',
+    noRentals: 'No rentals found.'
   };
-  t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+  t(key: string): string { return this.tr[key] ?? key; }
 
   constructor(private readonly rentalsService: RentalsService) {}
   ngOnInit(): void { this.rentalsService.list().subscribe(r => this.rentals = r); }
 }
+

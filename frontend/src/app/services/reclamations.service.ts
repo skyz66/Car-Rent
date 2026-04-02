@@ -16,10 +16,6 @@ export class ReclamationsService {
     return this.http.get<ApiResponse<any[]>>(`${environment.apiUrl}/reclamations/my`).pipe(map((r) => r.data));
   }
 
-  list(): Observable<any[]> {
-    return this.my();
-  }
-
   all(): Observable<any[]> {
     return this.http.get<ApiResponse<any[]>>(`${environment.apiUrl}/reclamations`).pipe(map((r) => r.data));
   }

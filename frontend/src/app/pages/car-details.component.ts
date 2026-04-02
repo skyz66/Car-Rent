@@ -34,6 +34,13 @@ import { Car } from '../models/types';
       box-shadow: 0 2px 14px var(--blue-glow); transition: all 0.18s;
     }
     .btn-book:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    .btn-check:disabled,
+    .btn-book:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
     .detail-image {
       width: 100%;
       height: 100%;
@@ -80,13 +87,16 @@ import { Car } from '../models/types';
             <h3 style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;margin:0 0 4px">{{ t('bookTitle') }}</h3>
             <p class="muted" style="font-size:0.85rem;margin:0 0 1.2rem">{{ t('bookSubtitle') }}</p>
             <form [formGroup]="form" (ngSubmit)="book()">
-              <div class="field"><label>{{ t('startDate') }}</label><input type="datetime-local" formControlName="start_date" /></div>
-              <div class="field"><label>{{ t('endDate') }}</label><input type="datetime-local" formControlName="end_date" /></div>
+              <div class="field"><label>{{ t('startDate') }}</label><input type="datetime-local" formControlName="start_date" [attr.min]="minStartDateTime" /></div>
+              <div class="field"><label>{{ t('endDate') }}</label><input type="datetime-local" formControlName="end_date" [attr.min]="minEndDateTime" /></div>
               <div class="btn-row">
-                <button type="button" class="btn-check" (click)="check()">{{ t('checkAvail') }}</button>
-                <button type="submit" class="btn-book">{{ t('bookNow') }}</button>
+                <button type="button" class="btn-check" (click)="check()" [disabled]="!isCarBookable()">{{ t('checkAvail') }}</button>
+                <button type="submit" class="btn-book" [disabled]="!isCarBookable()">{{ t('bookNow') }}</button>
               </div>
             </form>
+            <div class="note" *ngIf="car.status !== 'available'" style="margin-top:12px;color:#b91c1c">
+              This car is currently unavailable and cannot be booked.
+            </div>
             <div class="note" *ngIf="availabilityMessage" style="margin-top:12px">{{ availabilityMessage }}</div>
             <div class="note" *ngIf="bookingMessage" style="margin-top:12px">{{ bookingMessage }}</div>
           </mat-card-content>
@@ -100,25 +110,23 @@ export class CarDetailsComponent implements OnInit {
   car?: Car;
   availabilityMessage = '';
   bookingMessage = '';
-  lang: 'en' | 'fr' = 'en';
+  readonly minStartDateTime = this.toDateTimeLocal(new Date(new Date().setHours(0, 0, 0, 0)));
   readonly form = this.fb.group({ start_date: ['', Validators.required], end_date: ['', Validators.required] });
 
-  private tr: Record<string, Record<string, string>> = {
-    en: {
-      perDay: 'per day', gearbox: 'Gearbox', fuel: 'Fuel', seats: 'Seats',
-      bookTitle: 'Book This Car', bookSubtitle: 'Select your rental period and confirm instantly.',
-      startDate: 'Start date & time', endDate: 'End date & time',
-      checkAvail: 'Check Availability', bookNow: 'Book Now',
-    },
-    fr: {
-      perDay: 'par jour', gearbox: 'Boite de vitesse', fuel: 'Carburant', seats: 'Places',
-      bookTitle: 'Reserver ce vehicule', bookSubtitle: 'Selectionnez votre periode de location et confirmez instantanement.',
-      startDate: 'Date & heure de debut', endDate: 'Date & heure de fin',
-      checkAvail: 'Verifier la disponibilite', bookNow: 'Reserver maintenant',
-    }
+  private readonly tr: Record<string, string> = {
+    perDay: 'per day',
+    gearbox: 'Gearbox',
+    fuel: 'Fuel',
+    seats: 'Seats',
+    bookTitle: 'Book This Car',
+    bookSubtitle: 'Select your rental period and confirm instantly.',
+    startDate: 'Start date & time',
+    endDate: 'End date & time',
+    checkAvail: 'Check Availability',
+    bookNow: 'Book Now',
   };
 
-  t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+  t(key: string): string { return this.tr[key] ?? key; }
 
   constructor(private readonly route: ActivatedRoute, private readonly carsService: CarsService, private readonly rentalsService: RentalsService) {}
 
@@ -127,28 +135,67 @@ export class CarDetailsComponent implements OnInit {
     this.carsService.detail(id).subscribe(car => this.car = car);
   }
 
+  get minEndDateTime(): string {
+    return this.form.controls.start_date.value || this.minStartDateTime;
+  }
+
+  isCarBookable(): boolean {
+    return this.car?.status === 'available';
+  }
+
   check(): void {
     if (!this.car || this.form.invalid) return;
+    if (!this.isCarBookable()) {
+      this.availabilityMessage = 'This car is currently unavailable and cannot be booked.';
+      return;
+    }
     const { start_date, end_date } = this.form.getRawValue();
     if (!this.validateDateRange(start_date, end_date)) {
       return;
     }
     this.carsService.checkAvailability(this.car.id, start_date!, end_date!).subscribe({
-      next: res => this.availabilityMessage = res.available ? 'Car is available for selected dates.' : 'Car is not available for selected dates.',
+      next: res => this.availabilityMessage = this.availabilityText(res.available, res.reason),
       error: err => this.availabilityMessage = err?.error?.error?.message ?? 'Failed'
     });
   }
 
   book(): void {
     if (!this.car || this.form.invalid) return;
+    if (!this.isCarBookable()) {
+      this.bookingMessage = 'This car is currently unavailable and cannot be booked.';
+      return;
+    }
     const { start_date, end_date } = this.form.getRawValue();
     if (!this.validateDateRange(start_date, end_date)) {
       return;
     }
     this.rentalsService.create({ car_id: this.car.id, start_date: start_date!, end_date: end_date! }).subscribe({
-      next: () => this.bookingMessage = 'Booking created with pending status.',
-      error: err => this.bookingMessage = err?.error?.error?.message ?? 'Booking failed'
+      next: () => {
+        this.availabilityMessage = '';
+        this.bookingMessage = 'Booking request sent successfully. Please wait for admin confirmation.';
+      },
+      error: err => {
+        const code = err?.error?.error?.code;
+        if (code === 'PENDING_APPROVAL') {
+          this.bookingMessage = 'Booking request already pending. Please wait for admin response.';
+          return;
+        }
+        this.bookingMessage = err?.error?.error?.message ?? 'Booking failed';
+      }
     });
+  }
+
+  private availabilityText(available: boolean, reason?: string): string {
+    if (available) {
+      return 'Car is available for selected dates.';
+    }
+    if (reason === 'pending_admin_confirmation') {
+      return 'A booking request is pending for these dates. Please wait for admin confirmation.';
+    }
+    if (reason === 'car_status_unavailable') {
+      return 'This car is currently unavailable and cannot be booked.';
+    }
+    return 'Car is not available for selected dates.';
   }
 
   private validateDateRange(startDate: string | null, endDate: string | null): boolean {
@@ -169,6 +216,14 @@ export class CarDetailsComponent implements OnInit {
       return false;
     }
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    if (startTs < todayStart.getTime()) {
+      this.availabilityMessage = 'Start date cannot be in the past.';
+      this.bookingMessage = 'Start date cannot be in the past.';
+      return false;
+    }
+
     if (endTs <= startTs) {
       this.availabilityMessage = 'End date must be after start date.';
       this.bookingMessage = 'End date must be after start date.';
@@ -176,5 +231,15 @@ export class CarDetailsComponent implements OnInit {
     }
 
     return true;
+  }
+
+  private toDateTimeLocal(date: Date): string {
+    const pad = (value: number) => String(value).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const mm = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const min = pad(date.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
   }
 }

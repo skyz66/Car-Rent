@@ -131,28 +131,21 @@ import { environment } from '../../environments/environment';
 export class LoginComponent implements AfterViewInit {
   private readonly fb = inject(FormBuilder);
   error = '';
-  lang: 'en' | 'fr' = 'en';
   readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required]
   });
-  private tr: Record<string, Record<string, string>> = {
-    en: {
-      eyebrow: 'Customer Portal', title: 'Welcome back',
-      subtitle: 'Log in to book cars and manage your rentals.',
-      email: 'Email address', emailPh: 'you@example.com',
-      password: 'Password', submit: 'Sign in →',
-      register: "Don't have an account? Create one →",
-    },
-    fr: {
-      eyebrow: 'Espace Client', title: 'Bon retour',
-      subtitle: 'Connectez-vous pour réserver et gérer vos locations.',
-      email: 'Adresse e-mail', emailPh: 'vous@exemple.com',
-      password: 'Mot de passe', submit: 'Se connecter →',
-      register: 'Pas encore de compte ? Créez-en un →',
-    }
+  private readonly tr: Record<string, string> = {
+    eyebrow: 'Customer Portal',
+    title: 'Welcome back',
+    subtitle: 'Log in to book cars and manage your rentals.',
+    email: 'Email address',
+    emailPh: 'you@example.com',
+    password: 'Password',
+    submit: 'Sign in ->',
+    register: "Don't have an account? Create one ->",
   };
-  t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+  t(key: string): string { return this.tr[key] ?? key; }
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
 
   ngAfterViewInit(): void {
@@ -189,3 +182,4 @@ export class LoginComponent implements AfterViewInit {
     });
   }
 }
+

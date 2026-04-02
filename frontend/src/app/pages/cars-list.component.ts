@@ -170,43 +170,34 @@ import { Car } from '../models/types';
 })
 export class CarsListComponent implements OnInit {
   cars: Car[] = [];
-  lang: 'en' | 'fr' = 'en';
   private readonly fb = inject(FormBuilder);
 
   readonly filters = this.fb.group({
     search: [''], brand: [''], model: [''], minPrice: [''], maxPrice: ['']
   });
 
-  private tr: Record<string, Record<string, string>> = {
-    en: {
-      'hero.eyebrow': 'Fleet available now',
-      'hero.h1a': 'Find Your', 'hero.h1b': 'Perfect Ride',
-      'hero.subtitle': 'Browse premium vehicles and reserve in a few clicks. Transparent pricing, zero hidden fees.',
-      'filters.title': 'Filter Vehicles',
-      'filters.keyword': 'Keyword', 'filters.keywordPh': 'Search...',
-      'filters.brand': 'Brand', 'filters.model': 'Model',
-      'filters.minPrice': 'Min. price', 'filters.maxPrice': 'Max. price',
-      'filters.apply': 'Apply Filters', 'filters.reset': 'Reset',
-      'cars.sectionTitle': 'Available vehicles', 'cars.countLabel': 'cars',
-      'cars.perDay': 'per day', 'cars.viewDetails': 'View Details ->',
-      'specs.seats': 'seats',
-    },
-    fr: {
-      'hero.eyebrow': 'Flotte disponible maintenant',
-      'hero.h1a': 'Trouvez Votre', 'hero.h1b': 'Vehicule Ideal',
-      'hero.subtitle': 'Parcourez nos vehicules premium et reservez en quelques clics. Prix transparents, zero frais caches.',
-      'filters.title': 'Filtrer les vehicules',
-      'filters.keyword': 'Mot-cle', 'filters.keywordPh': 'Rechercher...',
-      'filters.brand': 'Marque', 'filters.model': 'Modele',
-      'filters.minPrice': 'Prix min.', 'filters.maxPrice': 'Prix max.',
-      'filters.apply': 'Appliquer', 'filters.reset': 'Reinitialiser',
-      'cars.sectionTitle': 'Vehicules disponibles', 'cars.countLabel': 'voitures',
-      'cars.perDay': 'par jour', 'cars.viewDetails': 'Voir les details ->',
-      'specs.seats': 'places',
-    }
+  private readonly tr: Record<string, string> = {
+    'hero.eyebrow': 'Fleet available now',
+    'hero.h1a': 'Find Your',
+    'hero.h1b': 'Perfect Ride',
+    'hero.subtitle': 'Browse premium vehicles and reserve in a few clicks. Transparent pricing, zero hidden fees.',
+    'filters.title': 'Filter Vehicles',
+    'filters.keyword': 'Keyword',
+    'filters.keywordPh': 'Search...',
+    'filters.brand': 'Brand',
+    'filters.model': 'Model',
+    'filters.minPrice': 'Min. price',
+    'filters.maxPrice': 'Max. price',
+    'filters.apply': 'Apply Filters',
+    'filters.reset': 'Reset',
+    'cars.sectionTitle': 'Available vehicles',
+    'cars.countLabel': 'cars',
+    'cars.perDay': 'per day',
+    'cars.viewDetails': 'View Details ->',
+    'specs.seats': 'seats',
   };
 
-  t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+  t(key: string): string { return this.tr[key] ?? key; }
 
   constructor(private readonly carsService: CarsService) {}
 

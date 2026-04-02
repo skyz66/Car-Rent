@@ -21,8 +21,17 @@ final class RentalsController
 
         $start = $data['start_date'];
         $end = $data['end_date'];
-        if (strtotime($start) >= strtotime($end)) {
+        $startTs = strtotime((string) $start);
+        $endTs = strtotime((string) $end);
+        if ($startTs === false || $endTs === false) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid date format', 422);
+        }
+        if ($startTs >= $endTs) {
             Response::json(false, null, 'VALIDATION_ERROR', 'End date must be after start date', 422);
+        }
+        $todayStartTs = strtotime(date('Y-m-d 00:00:00'));
+        if ($startTs < $todayStartTs) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Start date cannot be in the past', 422);
         }
 
         $user = AuthContext::user();
@@ -31,27 +40,36 @@ final class RentalsController
         }
 
         $pdo = Database::getInstance()->connect();
-
-        $stmt = $pdo->prepare(
-            "SELECT COUNT(*) as count FROM rentals
-             WHERE car_id = ?
-             AND status IN ('pending','confirmed','ongoing')
-             AND start_date < ? AND end_date > ?"
-        );
-        $stmt->execute([$data['car_id'], $end, $start]);
-        $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ((int) $conflict['count'] > 0) {
-            Response::json(false, null, 'CAR_UNAVAILABLE', 'Car is not available for the selected dates', 409);
-        }
-
-        $stmt = $pdo->prepare('SELECT daily_price FROM cars WHERE id = ?');
+        $stmt = $pdo->prepare('SELECT daily_price, status FROM cars WHERE id = ?');
         $stmt->execute([$data['car_id']]);
         $car = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$car) {
             Response::json(false, null, 'NOT_FOUND', 'Car not found', 404);
         }
 
-        $seconds = strtotime($end) - strtotime($start);
+        if (($car['status'] ?? '') !== 'available') {
+            Response::json(false, null, 'CAR_UNAVAILABLE', 'Car is currently unavailable for booking', 409);
+        }
+
+        $stmt = $pdo->prepare(
+            "SELECT
+                COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_count,
+                COALESCE(SUM(CASE WHEN status IN ('confirmed','ongoing') THEN 1 ELSE 0 END), 0) AS active_count
+             FROM rentals
+             WHERE car_id = ?
+             AND status IN ('pending','confirmed','ongoing')
+             AND start_date < ? AND end_date > ?"
+        );
+        $stmt->execute([$data['car_id'], $end, $start]);
+        $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ((int) ($conflict['active_count'] ?? 0) > 0) {
+            Response::json(false, null, 'CAR_UNAVAILABLE', 'Car is not available for the selected dates', 409);
+        }
+        if ((int) ($conflict['pending_count'] ?? 0) > 0) {
+            Response::json(false, null, 'PENDING_APPROVAL', 'A booking request is pending. Please wait for admin confirmation', 409);
+        }
+
+        $seconds = $endTs - $startTs;
         $days = (int) ceil($seconds / 86400);
         if ($days <= 0) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Invalid rental duration', 422);

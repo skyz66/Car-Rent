@@ -111,35 +111,7 @@ final class CarsController
     public static function create(): void
     {
         $data = Request::json();
-        $missing = Validator::required($data, ['plate_number', 'brand', 'model', 'year', 'gearbox', 'fuel', 'seats', 'daily_price', 'status']);
-        if ($missing) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
-        }
-        if (!Validator::isPlateNumber((string) $data['plate_number'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid plate number format', 422);
-        }
-        if (!Validator::isYear((string) $data['year'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid year format', 422);
-        }
-        if (!Validator::isPositiveInteger((string) $data['seats'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Seats must be a positive integer', 422);
-        }
-        if (!Validator::isDecimal((string) $data['daily_price'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Daily price must be a valid number with up to 2 decimals', 422);
-        }
-        if (!Validator::inList((string) $data['gearbox'], ['manual', 'automatic'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid gearbox value', 422);
-        }
-        if (!Validator::inList((string) $data['fuel'], ['petrol', 'diesel', 'hybrid', 'electric'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid fuel value', 422);
-        }
-        if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
-        }
-        $imageUrl = trim((string) ($data['image_url'] ?? ''));
-        if ($imageUrl !== '' && !Validator::isUrl($imageUrl)) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid image URL', 422);
-        }
+        $imageUrl = self::validateCarPayload($data);
 
         $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('INSERT INTO cars (plate_number, brand, model, year, category, gearbox, fuel, seats, daily_price, status)
@@ -169,35 +141,7 @@ final class CarsController
     public static function update(string $id): void
     {
         $data = Request::json();
-        $missing = Validator::required($data, ['plate_number', 'brand', 'model', 'year', 'gearbox', 'fuel', 'seats', 'daily_price', 'status']);
-        if ($missing) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
-        }
-        if (!Validator::isPlateNumber((string) $data['plate_number'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid plate number format', 422);
-        }
-        if (!Validator::isYear((string) $data['year'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid year format', 422);
-        }
-        if (!Validator::isPositiveInteger((string) $data['seats'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Seats must be a positive integer', 422);
-        }
-        if (!Validator::isDecimal((string) $data['daily_price'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Daily price must be a valid number with up to 2 decimals', 422);
-        }
-        if (!Validator::inList((string) $data['gearbox'], ['manual', 'automatic'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid gearbox value', 422);
-        }
-        if (!Validator::inList((string) $data['fuel'], ['petrol', 'diesel', 'hybrid', 'electric'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid fuel value', 422);
-        }
-        if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
-        }
-        $imageUrl = trim((string) ($data['image_url'] ?? ''));
-        if ($imageUrl !== '' && !Validator::isUrl($imageUrl)) {
-            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid image URL', 422);
-        }
+        $imageUrl = self::validateCarPayload($data);
         $pdo = Database::getInstance()->connect();
         $stmt = $pdo->prepare('UPDATE cars SET plate_number=?, brand=?, model=?, year=?, category=?, gearbox=?, fuel=?, seats=?, daily_price=?, status=? WHERE id=?');
         $stmt->execute([
@@ -236,6 +180,43 @@ final class CarsController
         Response::json(true, ['updated' => true]);
     }
 
+    private static function validateCarPayload(array $data): string
+    {
+        $missing = Validator::required($data, ['plate_number', 'brand', 'model', 'year', 'gearbox', 'fuel', 'seats', 'daily_price', 'status']);
+        if ($missing) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Missing required fields', 422, ['fields' => $missing]);
+        }
+
+        if (!Validator::isPlateNumber((string) $data['plate_number'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid plate number format', 422);
+        }
+        if (!Validator::isYear((string) $data['year'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid year format', 422);
+        }
+        if (!Validator::isPositiveInteger((string) $data['seats'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Seats must be a positive integer', 422);
+        }
+        if (!Validator::isDecimal((string) $data['daily_price'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Daily price must be a valid number with up to 2 decimals', 422);
+        }
+        if (!Validator::inList((string) $data['gearbox'], ['manual', 'automatic'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid gearbox value', 422);
+        }
+        if (!Validator::inList((string) $data['fuel'], ['petrol', 'diesel', 'hybrid', 'electric'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid fuel value', 422);
+        }
+        if (!Validator::inList((string) $data['status'], ['available', 'maintenance', 'unavailable'])) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid status value', 422);
+        }
+
+        $imageUrl = trim((string) ($data['image_url'] ?? ''));
+        if ($imageUrl !== '' && !Validator::isUrl($imageUrl)) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid image URL', 422);
+        }
+
+        return $imageUrl;
+    }
+
     public static function delete(string $id): void
     {
         $pdo = Database::getInstance()->connect();
@@ -251,10 +232,35 @@ final class CarsController
         if (!$start || !$end) {
             Response::json(false, null, 'VALIDATION_ERROR', 'Start and end are required', 422);
         }
+        $startTs = strtotime((string) $start);
+        $endTs = strtotime((string) $end);
+        if ($startTs === false || $endTs === false) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Invalid date format', 422);
+        }
+        if ($startTs >= $endTs) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'End date must be after start date', 422);
+        }
+        $todayStartTs = strtotime(date('Y-m-d 00:00:00'));
+        if ($startTs < $todayStartTs) {
+            Response::json(false, null, 'VALIDATION_ERROR', 'Start date cannot be in the past', 422);
+        }
 
         $pdo = Database::getInstance()->connect();
+        $carStmt = $pdo->prepare('SELECT status FROM cars WHERE id = ?');
+        $carStmt->execute([$id]);
+        $car = $carStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$car) {
+            Response::json(false, null, 'NOT_FOUND', 'Car not found', 404);
+        }
+
+        if (($car['status'] ?? '') !== 'available') {
+            Response::json(true, ['available' => false, 'reason' => 'car_status_unavailable']);
+        }
+
         $stmt = $pdo->prepare(
-            "SELECT COUNT(*) as count
+            "SELECT
+                COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_count,
+                COALESCE(SUM(CASE WHEN status IN ('confirmed','ongoing') THEN 1 ELSE 0 END), 0) AS active_count
              FROM rentals
              WHERE car_id = ?
              AND status IN ('pending','confirmed','ongoing')
@@ -262,8 +268,16 @@ final class CarsController
         );
         $stmt->execute([$id, $end, $start]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $available = ((int) $row['count']) === 0;
+        $activeCount = (int) ($row['active_count'] ?? 0);
+        $pendingCount = (int) ($row['pending_count'] ?? 0);
 
-        Response::json(true, ['available' => $available]);
+        if ($activeCount > 0) {
+            Response::json(true, ['available' => false, 'reason' => 'booked']);
+        }
+        if ($pendingCount > 0) {
+            Response::json(true, ['available' => false, 'reason' => 'pending_admin_confirmation']);
+        }
+
+        Response::json(true, ['available' => true]);
     }
 }

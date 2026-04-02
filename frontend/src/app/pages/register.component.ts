@@ -49,6 +49,7 @@ import { AuthService } from '../services/auth.service';
     .btn-register:hover { background: var(--blue-dark); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(23,87,240,0.35); }
     .link { font-size: 0.875rem; color: var(--blue); font-weight: 500; text-decoration: none; text-align: center; display: block; margin-top: 14px; cursor: pointer; }
     .link:hover { text-decoration: underline; }
+    .field-error { font-size: 0.78rem; color: #b91c1c; }
     .error-box { background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; color: #b91c1c; margin-top: 8px; }
     @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .span-2, .section-sep { grid-column: 1; } }
   `],
@@ -63,7 +64,13 @@ import { AuthService } from '../services/auth.service';
             <div class="field"><label>{{ t('firstName') }}</label><input type="text" formControlName="first_name" placeholder="Ahmed Amine" /></div>
             <div class="field"><label>{{ t('lastName') }}</label><input type="text" formControlName="last_name" placeholder="Lahbib" /></div>
             <div class="field"><label>{{ t('email') }}</label><input type="email" formControlName="email" placeholder="you@example.com" /></div>
-            <div class="field"><label>{{ t('phone') }}</label><input type="tel" formControlName="phone" placeholder="+216 xx xxx xxx" /></div>
+            <div class="field">
+              <label>{{ t('phone') }}</label>
+              <input type="tel" formControlName="phone" placeholder="12345678" />
+              <div class="field-error" *ngIf="form.controls.phone.touched && form.controls.phone.errors?.['pattern']">
+                Phone must contain exactly 8 digits.
+              </div>
+            </div>
             <div class="field span-2"><label>{{ t('password') }}</label><input type="password" formControlName="password" [placeholder]="t('passwordPh')" /></div>
             <div class="field span-2"><label>{{ t('confirmPassword') }}</label><input type="password" formControlName="confirm_password" [placeholder]="t('confirmPasswordPh')" /></div>
           </div>
@@ -77,39 +84,37 @@ import { AuthService } from '../services/auth.service';
 })
 export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly phonePattern = /^\+?[0-9 ]{8,15}$/;
+  private readonly phonePattern = /^\d{8}$/;
   private readonly passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
   error = '';
-  lang: 'en' | 'fr' = 'en';
   readonly form = this.fb.group({
     first_name: ['', [Validators.required, Validators.maxLength(100)]], last_name: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email]], phone: ['', Validators.pattern(this.phonePattern)],
     password: ['', [Validators.required, Validators.pattern(this.passwordPattern)]],
     confirm_password: ['', Validators.required]
   });
-  private tr: Record<string, Record<string, string>> = {
-    en: {
-      eyebrow: 'Get Started', title: 'Create your account', subtitle: 'Register once and start renting in minutes.',
-      firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone',
-      password: 'Password', passwordPh: 'Create a strong password',
-      confirmPassword: 'Confirm password', confirmPasswordPh: 'Re-enter your password',
-      submit: 'Create Account →', login: 'Already have an account? Sign in',
-    },
-    fr: {
-      eyebrow: 'Commencer', title: 'Créer votre compte', subtitle: 'Inscrivez-vous une fois et commencez à louer en quelques minutes.',
-      firstName: 'Prénom', lastName: 'Nom', email: 'Adresse e-mail', phone: 'Téléphone',
-      password: 'Mot de passe', passwordPh: 'Créez un mot de passe fort',
-      confirmPassword: 'Confirmer le mot de passe', confirmPasswordPh: 'Retapez votre mot de passe',
-      submit: 'Créer mon compte →', login: 'Déjà un compte ? Se connecter',
-    }
+  private readonly tr: Record<string, string> = {
+    eyebrow: 'Get Started',
+    title: 'Create your account',
+    subtitle: 'Register once and start renting in minutes.',
+    firstName: 'First name',
+    lastName: 'Last name',
+    email: 'Email',
+    phone: 'Phone',
+    password: 'Password',
+    passwordPh: 'Create a strong password',
+    confirmPassword: 'Confirm password',
+    confirmPasswordPh: 'Re-enter your password',
+    submit: 'Create Account ->',
+    login: 'Already have an account? Sign in',
   };
-  t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+  t(key: string): string { return this.tr[key] ?? key; }
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
   submit(): void {
     this.error = '';
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.error = 'Please enter valid data in all required fields.';
+      this.error = this.buildValidationErrorMessage();
       return;
     }
     const { confirm_password, ...payload } = this.form.getRawValue();
@@ -122,4 +127,31 @@ export class RegisterComponent {
       error: err => this.error = err?.error?.error?.message ?? 'Registration failed'
     });
   }
+
+  private buildValidationErrorMessage(): string {
+    const firstName = this.form.controls.first_name;
+    if (firstName.errors?.['required']) return 'First name is required.';
+    if (firstName.errors?.['maxlength']) return 'First name is too long.';
+
+    const lastName = this.form.controls.last_name;
+    if (lastName.errors?.['required']) return 'Last name is required.';
+    if (lastName.errors?.['maxlength']) return 'Last name is too long.';
+
+    const email = this.form.controls.email;
+    if (email.errors?.['required']) return 'Email is required.';
+    if (email.errors?.['email']) return 'Email format is invalid.';
+
+    const phone = this.form.controls.phone;
+    if (phone.errors?.['pattern']) return 'Phone must contain exactly 8 digits.';
+
+    const password = this.form.controls.password;
+    if (password.errors?.['required']) return 'Password is required.';
+    if (password.errors?.['pattern']) return 'Password must be at least 6 characters with at least one letter and one number.';
+
+    const confirmPassword = this.form.controls.confirm_password;
+    if (confirmPassword.errors?.['required']) return 'Please confirm your password.';
+
+    return 'Please enter valid data in all required fields.';
+  }
 }
+

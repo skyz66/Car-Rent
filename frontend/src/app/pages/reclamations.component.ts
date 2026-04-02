@@ -80,29 +80,25 @@ export class ReclamationsComponent implements OnInit {
   reclamations: any[] = [];
   successMsg = '';
   errorMsg = '';
-  lang: 'en' | 'fr' = 'en';
 
   readonly form = this.fb.group({
     subject: ['', [Validators.required, Validators.maxLength(190)]],
     description: ['', Validators.required]
   });
 
-  private tr: Record<string, Record<string, string>> = {
-    en: {
-      title: 'Reclamations', total: 'total', newTitle: 'Submit a Reclamation',
-      subject: 'Subject', description: 'Description', submit: 'Submit',
-      none: 'No reclamations found.',
-    },
-    fr: {
-      title: 'Réclamations', total: 'au total', newTitle: 'Soumettre une réclamation',
-      subject: 'Sujet', description: 'Description', submit: 'Soumettre',
-      none: 'Aucune réclamation trouvée.',
-    }
+  private readonly tr: Record<string, string> = {
+    title: 'Reclamations',
+    total: 'total',
+    newTitle: 'Submit a Reclamation',
+    subject: 'Subject',
+    description: 'Description',
+    submit: 'Submit',
+    none: 'No reclamations found.',
   };
-  t(key: string): string { return this.tr[this.lang]?.[key] ?? this.tr['en'][key] ?? key; }
+  t(key: string): string { return this.tr[key] ?? key; }
 
   constructor(private readonly reclamationsService: ReclamationsService) {}
-  ngOnInit(): void { this.reclamationsService.list().subscribe(r => this.reclamations = r); }
+  ngOnInit(): void { this.reclamationsService.my().subscribe(r => this.reclamations = r); }
 
   submit(): void {
     if (this.form.invalid) {
@@ -116,3 +112,4 @@ export class ReclamationsComponent implements OnInit {
     });
   }
 }
+
